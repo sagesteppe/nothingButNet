@@ -70,91 +70,52 @@ rm(bee_obs_wk, resin, bee_obs)
 
 # networks
 
-net = graph_from_incidence_matrix(test, weight=T)
-deg = centr_degree(net, mode="all")
-
-
-colrs <- c("#CEAB07", "deeppink2") # magenta2, goldenrod3
-V(net)$color = rbind(c(
-  rep(colrs[1],nrow(test)),
-  rep(colrs[2],ncol(test))
-  )
-)
-
-V(net)$size = 5*sqrt(deg$res) # make the more abundant taxa larger
-E(net)$width = E(net)$weight/3 # reduce some edge sizes.
-# V(i_net)$label <- NA 
-
-template <- layout_in_circle(net)
-
-template_test <- nrow(template)
-
-plot(net, layout=template, 
-#            edge.color = "lightseagreen",
- #   vertex.label.dist= lab_dist_vals, 
-#   vertex.label.degree = degree_shift, 
-    label.font = 3)
-legend(x=-2.25, y=1.25, c("Bombus", "Plant"), pch=21, col="#777777", 
-       pt.bg=colrs, pt.cex=2, cex=.8, bty="n", ncol=1)
-
-
-graphDrawer <- function(x, edge_clr, node_clrs = c(), bg_clr, label_fnt_size, legend_items){
-  
-  i_net = graph_from_incidence_matrix(x, weight=T)
-  deg = centr_degree(i_net, mode="all")
-  
-  V(i_net)$color = rbind(c(
-    rep(node_clrs[1],nrow(early)),
-    rep(node_clrs[2],ncol(early))
-  )
-  )
-}
-
-
-template <- layout_in_circle(net)
-template_test <- nrow(template)
-
-plot(net, layout=template, 
-     edge.color = "lightseagreen",
-     vertex.label.dist= lab_dist_vals, 
-     vertex.label.degree = degree_shift, 
-     label.font = 3)
-legend(x=-2.25, y=1.25, c("Bombus", "Plant"), pch=21, col="#777777", 
-       pt.bg=colrs, pt.cex=2, cex=.8, bty="n", ncol=1)
-
-
-
 blanker <- function(network){
   
   netL <- nrow(network) + ncol(network) 
   QnetL <- round(netL / 4 , 0 ) 
-
   
   if(
-    nrow(network) < QnetL
+    nrow(network) == ncol(network)) {
+    
+    A = network[1:floor(QnetL),] 
+    B = matrix(data = 0, ncol = ncol(network), nrow = 3)
+    C = network[(floor(QnetL) + 1):nrow(network),] 
+    p <- rbind(A,B,C)
+    
+    p <- data.frame(
+      p[,1:(floor(QnetL))],
+      matrix(data = 0, nrow(p), ncol = 3),
+      p[,(floor(QnetL)+1):ncol(network)]
     )
+    
+  } else if(
+    nrow(network) < QnetL
+  ) {
     
     p <- data.frame(
       network[,1:floor(QnetL)], 
-      matrix(data = 0, nrow(network), ncol = 2),
+      matrix(data = 0, nrow(network), ncol = 3),
       network[,(floor(QnetL) + 1):floor(ncol(network)/2)],
-      matrix(data = 0, nrow(network), ncol = 2),
+      matrix(data = 0, nrow(network), ncol = 3),
       network[,(floor(ncol(network)/2) + 1):ncol(network)]
-      ) 
-  
-  else 
+    ) 
+    
+  } else {
     
     A = network[1:floor(QnetL),] 
-    B = matrix(data = 0, ncol = ncol(network), nrow = 2)
+    B = matrix(data = 0, ncol = ncol(network), nrow = 3)
     C = network[(floor(QnetL) + 1):nrow(network),] 
     p <- rbind(A,B,C)
     
     p <- data.frame(
       p[,1:(floor(ncol(p)/2) + 2)],
-      matrix(data = 0, nrow(p), ncol = 2),
+      matrix(data = 0, nrow(p), ncol = 3),
       p[,(floor(ncol(p)/2) + 5):ncol(p)]
-    ) 
+    )
     
+  }
+  
   names(p) <- gsub('\\.\\.', '\\.', names(p))
   return(p)
 }
@@ -169,16 +130,18 @@ vertex_names <- function(x){
   vertice_names <- c(rownames(x), colnames(x))
   vertice_names <- sub('^X$', '', vertice_names)
   vertice_names <- sub('^X1$', '', vertice_names)
+  vertice_names <- sub('^X3$', '', vertice_names)
   vertice_names <- sub('^X2$', '', vertice_names)
   vertice_names <- sub('^X.1$', '', vertice_names)
   vertice_names <- sub('^X.2$', '', vertice_names)
+  vertice_names <- sub('^X.3$', '', vertice_names)
 }
 VNames <- vertex_names(test)
 
 vert_lab_position <- function(x){
   
   #' Takes a single input, a network, this will serve to specify the positions
-  #' for the labels of objects in it. It does not modify the label values, just #
+  #' for the labels of objects in it. It does not modify the label values, just
   #' positions and orientation. NOTE: some extra terms are left in the function
   #' for modifications of the upper and lower positions
   
@@ -186,41 +149,29 @@ vert_lab_position <- function(x){
   degrees <- 360/nodes
   positions <- degrees * 1:nodes
   
-  
   degree_shift <- c(
-    rep(0, length(which((positions < 57.5) == TRUE))),
+    rep(0, length(which((positions < 70) == TRUE))),
+    rep(-pi/2, length(which((positions > 70 & positions < 110) == TRUE))),
     
-    rep(0, length(which((positions > 57.5 & positions < 78.75) == TRUE))),
-    rep(-pi/2, length(which((positions > 78.75 & positions < 101.25) == TRUE))),
-    rep(-pi/2, length(which((positions > 101.25 & positions < 112.5) == TRUE))),
+    rep(pi, length(which((positions > 110 & positions < 250) == TRUE))),
     
-    rep(pi, length(which((positions > 112.5 & positions < 247.5) == TRUE))),
-    
-    rep(pi/2, length(which((positions > 247.5 & positions < 278.75) == TRUE))),
-    rep(pi/2, length(which((positions > 278.75 & positions < 301.25) == TRUE))),
-    rep(0, length(which((positions > 301.25 & positions < 312.5) == TRUE))), 
-    
-    rep(0, length(which((positions > 312.5) == TRUE)))
+    rep(pi/2, length(which((positions > 250 & positions < 290) == TRUE))),
+    rep(0, length(which((positions > 290) == TRUE)))
     # '0' right, '-pi/2' up, 'pi' left, 'pi/2' down
   )
   
   
   dist_vals <- c(
-    rep(8, length(which((positions < 57.5) == TRUE))),
-    
-    rep(6, length(which((positions > 57.5 & positions < 78.75) == TRUE))),
+    rep(8, length(which((positions < 70) == TRUE))),
     rep(c(2,3), each = 1, length.out = 
-          length(which((positions > 78.75 & positions < 101.25) == TRUE))),
-    rep(2, length(which((positions > 101.25 & positions < 112.5) == TRUE))),
+          length(which((positions > 70 & positions < 110) == TRUE))),
     
-    rep(8, length(which((positions > 112.5 & positions < 247.5) == TRUE))),
+    rep(8, length(which((positions > 110 & positions < 250) == TRUE))),
     
-    rep(2, length(which((positions > 247.5 & positions < 278.75) == TRUE))),
-    rep(c(3,2), each = 1, length.out = 
-          length(which((positions > 278.75 & positions < 301.25) == TRUE))),
-    rep(6, length(which((positions > 301.25 & positions < 312.5) == TRUE))), 
+    rep(c(2,3), each = 1, length.out = 
+          length(which((positions > 250 & positions < 290) == TRUE))),
+    rep(6, length(which((positions > 290) == TRUE)))
     
-    rep(8, length(which((positions > 312.5) == TRUE)))
     # '0' right, '-pi/2' up, 'pi' left, 'pi/2' down
   )
   
@@ -258,10 +209,11 @@ set_colors <- function(x, node_clr1, node_clr2, bg_clr){
 
 net <- set_colors(net, node_clr1 = "#CEAB07", node_clr2 = "deeppink2")
 
-
 V(net)$size = 5*sqrt(deg$res) 
 E(net)$width = E(net)$weight/3 
 template <- layout_in_circle(net)
+
+# node_colors <- c(node_clr1, node_clr2) # for function only
 
 plot(net, layout=template, 
     edge.color = "lightseagreen",
@@ -269,4 +221,19 @@ plot(net, layout=template,
     vertex.label.dist= VLPs$dist_vals, 
     vertex.label.degree = VLPs$degree_shift, 
     label.font = 3)
+legend(x=-2.25, y=1.25, c("Bombus", "Plant"), pch=21, col="#777777", 
+     #  pt.bg=node_colors, 
+     pt.cex=2, cex=.8, bty="n", ncol=1)
 
+
+graphDrawer <- function(x, edge_clr, node_clrs = c(), bg_clr, label_fnt_size, legend_items){
+  
+  i_net = graph_from_incidence_matrix(x, weight=T)
+  deg = centr_degree(i_net, mode="all")
+  
+  V(i_net)$color = rbind(c(
+    rep(node_clrs[1],nrow(early)),
+    rep(node_clrs[2],ncol(early))
+  )
+  )
+}
