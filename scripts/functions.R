@@ -121,10 +121,8 @@ vertex_names <- function(x){
 
 #' Give node labels rendering space
 #' 
-#' Takes a single input, a network, this will serve to specify the positions
-#' for the labels of objects in it. It does not modify the label values, just
-#' positions and orientation. NOTE: some extra terms are left in the function
-#' for modifications of the upper and lower positions
+#' 'vert_lab_position' specifies the positions for the labels of objects in the 
+#' graphs. It does not modify the label values, just positions and orientation. 
 #' 
 #' @param x = a matrix output from vertex_names
 #' @seealso 'vertex_names', 'graphDrawer'
@@ -254,6 +252,7 @@ graph_dims <- function(ntwrks_page, col){
 #' @param W = (numeric) length of graph in pixels. If left blank is calculated 
 #' to maximixe graph sizes on an A4 page with standard margins based on 
 #' 'ntwrks_page' and 'col'
+#' @return a graph to a location on disk. 
 #' @seealso 'blanker', 'vertex_names, vert_lab_position','set_colors',
 #' 'graph_dims'
 #' @export
