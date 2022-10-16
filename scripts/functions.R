@@ -374,11 +374,6 @@ graphDrawer(mid, lbl_fnt = 14,
             col = 3
 )
 
-# the below looks cool...
-# map(out.list, ~ network.fun(nodes = .x$nodes, edges = .x$edges))
-
-
-map2(out.list, names(out.list), ~ network.fun(plotName = .y, nodes = .x$nodes, edges = .x$edges))
 
 
 names(late)
