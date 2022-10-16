@@ -3,4 +3,4 @@ For information behind the impetus to produce networks, and analyze, plant polli
 
 ![BigRedBillWalton](./data/images/bill_walton.jpg)
 
-image: 'Big Red' Bill Walton
+image: 'Big Red' Bill Walton - the patron saint of this package.
