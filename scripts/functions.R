@@ -35,7 +35,7 @@ bee_obs <- read.csv(
     week %in% 9:11 ~ 'Late'
   ))
 
-arranged <- c('C.gunnisonii', 'E.grandiflorum',
+arranged_plants <- c('C.gunnisonii', 'E.grandiflorum',
   
   'A.columbianum', 'A.coerulea', "T.fendleri",
   'D.barbeyi', 'D.nuttallianum',
@@ -64,6 +64,10 @@ arranged <- c('C.gunnisonii', 'E.grandiflorum',
   'O.occidentalis'
   )
 
+arranged_bees <- c('bifarius', 'mixtus', 'rufocinctus', 'sylvicola',
+                   'flavifrons',
+                   'appositus', 'californicus', 'nevadensis', 
+                   'unknown')
 
 rm(p2d, files, observation_times)
 
@@ -89,32 +93,35 @@ resin <- bee_obs_wk %>%
   lapply(., select, -period) %>% 
   lapply(., as.matrix)
 
-
-early <- resin[['Early']]
-mid <- resin[['Mid']]
-late <- resin[['Late']]
-
-early <- early[rowSums(early) > 0, colSums(early) > 0]
-mid <- mid[rowSums(mid) > 0, colSums(mid) > 0]
-late <- late[rowSums(late) > 0, colSums(late) > 0]
-
-colnames(early) <- sub(" ", "", colnames(early))
-colnames(mid) <- sub(" ", "", colnames(mid))
-colnames(late) <- sub(" ", "", colnames(late))
-
-col2grab <- match(arranged, colnames(mid)) |> na.omit()
-early <- early[, col2grab]
-col2grab <- match(arranged, colnames(mid)) |> na.omit()
-mid <- mid[, col2grab]
-col2grab <- match(arranged, colnames(mid)) |> na.omit()
-late <- late[, col2grab]
-
-nets <- list(early, mid, late)
-
-rm(bee_obs_wk, resin, bee_obs)
-
-# networks
-
+arrange_nets <- function(x, col_arrange, row_arrange){
+  
+  #' This function serves to help standardize the order of species in these networks.
+  #' We use two different schema to arrange our taxa in one net! The insects we arrange
+  #' based on functional parameters, in this case proboscis length. The plants we 
+  #' arrange using a phylogenetic and alphabetical approach. These arguments must be 
+  #' given as character vectors with names in the EXACT SAME format as the input data.
+  #' 
+  #' INPUTS: 
+  #' x = a network in split format
+  #' col_arrange = a character vector with it's elements in the order which you want the columns arranged (all column names must be in the vector, and be in the format 'GENUS.EPITHET' (note no spaces))
+  #' row_arrange = a character vector with it's elements in the order which you want the rows arranged (all row names must be in the vector)
+  #' 
+  if(missing(row_arrange)) { row_arrange <- rownames(x) }
+  
+  x <- x[rowSums(x) > 0, colSums(x) > 0]
+  colnames(x) <- sub(" ", "", colnames(x))
+  col_arrange <- sub(" ", "", col_arrange)
+  row_arrange <- sub(" ", "", row_arrange)
+  
+  col2grab <- match(col_arrange, colnames(x)) |> na.omit()
+  x <- x[, col2grab]
+  
+  row2grab <- match(row_arrange, rownames(x)) |> na.omit()
+  x <- x[row2grab, ]
+  
+  return(x)
+  
+}
 blanker <- function(x){
   
   netL <- nrow(x) + ncol(x) 
@@ -205,15 +212,15 @@ vert_lab_position <- function(x){
   
   
   dist_vals <- c(
-    rep(5, length(which((positions < 65) == TRUE))),
+    rep(4, length(which((positions < 65) == TRUE))),
     rep(c(2,3), each = 1, length.out = 
           length(which((positions > 65 & positions < 125) == TRUE))),
     
-    rep(5, length(which((positions > 125 & positions < 245) == TRUE))),
+    rep(4, length(which((positions > 125 & positions < 245) == TRUE))),
     
     rep(c(2,3), each = 1, length.out = 
           length(which((positions > 245 & positions < 295) == TRUE))),
-    rep(5, length(which((positions > 295) == TRUE)))
+    rep(4, length(which((positions > 295) == TRUE)))
     
     # '0' right, '-pi/2' up, 'pi' left, 'pi/2' down
   )
@@ -244,9 +251,25 @@ set_colors <- function(x, net, node_clrs,  bg_clr, VNames){
   return(net)
   
 }
+graph_dims <- function(ntwrks_page, col){
+  
+  #' this function hopefully returns square graphs of similar size which may be
+  #' somewhat readily assembled onto an A4 page with what i hope are standard
+  #' page margins (2.97cm top & bottom, 2.1 cm sides). It is easily modifiable for
+  #' alternative dimensions. It assumes you want to fill an entire page with graphs.
+  
+  W = round(1984 / col, 0)
+  H = round(2864 / (ntwrks_page/col), 0 )
+  if(W > H){ W <- H} else {H <- W}
+  
+  dims <- list('W' = W, 
+               'H' = H)
+  return(dims)
+}
 
 graphDrawer <- function(data, plot_name, edge_clr, node_clrs,  bg_clr, 
-                        lbl_fnt, legend_items, directory, fname){
+                        lbl_fnt, legend_items, directory, fname,
+                        ntwrks_page, col, H, W){
   
   #' this function serves to draw multiples of similar graphs, it's most logical 
   #' applications are in displaying information across temporal slices, or 
@@ -262,15 +285,33 @@ graphDrawer <- function(data, plot_name, edge_clr, node_clrs,  bg_clr,
   #' bg_clr, a background color for the network, defaults to white
   #' label_fnt_size, label font size defaults to 9
   #' legend item, the name of the two groups on the axis, e.g. c('Insects', 'Plants')
- 
+  #' directory = name of directory to save graphs to, defaults to 'NetworkGraphs'
+  #' fname = filename for the output graph, defaults to name of input
+  #' ntwrks_page = (numeric) how many networks per page? Defaults to one
+  #' col = (numeric) how many columns of networks? Defaults to one
+  #' H = (numeric) heigh of graph in pixels. If left blank is calculated to maximixe 
+  #' graph sizes on an A4 page with standard margins based on 'ntwrks_page' and 'col'
+  #' W = (numeric) length of graph in pixels. If left blank is calculated to maximixe 
+  #' graph sizes on an A4 page with standard margins based on 'ntwrks_page' and 'col'
   
-  this <- substitute(data)
-  
+  if(missing(plot_name)) { plot_name <- substitute(data) }
   if(missing(lbl_fnt)) { lbl_fnt <- 14 }
   if(missing(directory)) { directory <- 'NetworkGraphs' }
   if(missing(fname)) { fname <- paste0(substitute(data), '.png') 
   } else {fname <- paste0(fname, '.png')}
-  if(missing(plot_name)) { plot_name <- substitute(data) }
+  
+  if(missing(ntwrks_page)) { ntwrks_page <- 1 } | if(missing(col)) { col <- 1 }
+  if(missing(H)) { H <- NA}  |  if(missing(W)) { W <- NA}
+  dims <- list('H' = H, 'W' = W)
+  if(is.na(dims$H) + is.na(dims$W) == 0){
+    dims 
+  } else if(is.na(dims$H) & !is.na(dims$W)){
+    dims$H <- dims$W
+  } else if(is.na(dims$W) & !is.na(dims$H)){
+    dims$W <- dims$H
+  } else {
+    dims <- graph_dims(ntwrks_page, col)
+  }
   
   filename <- file.path(directory, fname)
   
@@ -286,41 +327,52 @@ graphDrawer <- function(data, plot_name, edge_clr, node_clrs,  bg_clr,
   
   net <- set_colors(x = blanked_data, net, node_clrs, VNames = VNames)
   
+  V(net)$label.color <- 'black'
   V(net)$size = 5*sqrt(deg$res) 
   E(net)$width = E(net)$weight/4
   template <- layout_in_circle(net)
   
-  
   png(filename,
-      width = 480, height = 480, units = "px", pointsize = 12)
+      width = dims$W, height = dims$H, units = "px", pointsize = 12)
   
-  par(oma=c(1,3,1,3))
+  par(mar=c(5,6,5,6))
   plot(net, layout=template, 
        edge.color = edge_clr,
        vertex.label = VNames,
-       vertex.label.dist= VLPs$dist_vals, 
-       vertex.label.degree = VLPs$degree_shift, 
+       vertex.label.dist= VLPs$dist_vals, vertex.label.degree = VLPs$degree_shift, 
        label.font = lbl_fnt,
        main = plot_name
        ) 
-    legend(x= -0.15, y=-1.1, c("Bombus", "Plant"), 
+    legend(x= -0.25, y=-1.35, legend_items, 
            pch=21, col="#777777", 
            pt.bg=node_clrs, 
            pt.cex=2, cex=.8, bty="n", ncol=1)
-  
+    
  invisible(dev.off())
+ 
+ message(paste0("'", plot_name, "' has been rendered as a graph and saved to:\n ", filename))
 
 }
 
-graphDrawer(early, lbl_fnt = 14,
-        #    plot_name = 'late',
+# networks
+
+tet <- lapply(resin, arrange_nets, col_arrange = arranged_plants, 
+              row_arrange = arranged_bees)
+rm(bee_obs_wk, resin, bee_obs)
+
+early <- tet[['Early']]
+mid <- tet[['Mid']]
+late <- tet[['Late']]
+
+graphDrawer(mid, lbl_fnt = 14,
+            plot_name = 'mid',
             edge_clr = 'lightseagreen',
             node_clrs  = c("#CEAB07", "deeppink2"),
             legend_items = c("Bombus", "Plant"),
-        #    fname = 'mid'
-            )
-
-plot(x = mtcars$wt, y = mtcars$mpg)
+            fname = 'floral-mid', 
+            ntwrks_page = 12,
+            col = 3
+)
 
 # the below looks cool...
 # map(out.list, ~ network.fun(nodes = .x$nodes, edges = .x$edges))
