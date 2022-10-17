@@ -380,22 +380,26 @@ r <- netPage(col_var = c('observation', 'microscopy', 'molecular'),
 col_var <- c('aC', 'bC', 'cC')
 row_var <- c('aR', 'bR', 'cR', 'dR')
 nPlots <- (length(col_var) * length(row_var))
-nCol <- length(col_var)
+colN <- length(col_var)
 rowN <- nPlots / length(col_var)
 
 
 # need to populate this empty matrix with values 
 
 
-layout <- matrix(nrow = rowN, ncol = nCol, byrow = T,
-                 data = c(rep(1:(rowN -1), each = nCol),
-                          rowN:((rowN-1) + nCol) )
+layout <- matrix(nrow = rowN, ncol = colN, byrow = T,
+                 data = c(rep(1:(rowN -1), each = colN),
+                          rowN:((rowN-1) + colN) )
 )
 
-g1 <- arrangeGrob(grobs = grob_images[1:nCol], ncol = nCol, left = row_var)
+
+x <- 1:(nPlots - rowN) +1
+res <- x[!x%%colN]
 
 
 
+
+g1 <- arrangeGrob(grobs = grob_images[1:colN], ncol = colN, left = row_var)
 g2 <- arrangeGrob(grobs = grob_images, ncol = nCol, left = row_var)
 g3 <- arrangeGrob(grobs = grob_images, ncol = nCol, left = row_var)
 
