@@ -334,9 +334,10 @@ graphDrawer <- function(data, plot_name, edge_clr, node_clrs,  bg_clr,
 #' left to right
 #' @return a cowplot arranged grid.
 
-netPage <- function(directory, col_var, row_var, col){
+netPage <- function(directory, col_var, row_var, col, fname){
   
   if(missing(directory)) { directory <- 'NetworkGraphs' }
+  if(missing(fname)) {fname <- 'mosaiced_Nets.pdf'}
   
   rowOrder <- matrix( # this sets up a matrix to have rows groups in order
     data = rep(row_var, each = length(col_var)),
@@ -351,39 +352,55 @@ netPage <- function(directory, col_var, row_var, col){
   images = lapply(image_orders, png::readPNG)
   grob_images = lapply(images, grid::rasterGrob)
   
-  plot <- gridExtra::grid.arrange(grobs= grob_images, ncol = length(col_var), 
-                          top="Bill Walton")
   
-  # using magick here makes sense. 
-#  input <- rep(logo, 12)
-#  image_montage(input, geometry = 'x100+10+10', tile = '4x3', bg = 'pink', shadow = TRUE)
+  # we might need to arrange each row seperately in order to add the 
+  # title to the left side. 
+  
+  pdf(file = file.path(directory, fname), paper = 'a4')
+  plot <- gridExtra::grid.arrange(grobs= grob_images, ncol = length(col_var), 
+                          top="Bill Walton", left="mid", bottom = 'molecular')
+
+#  grid::grid.text(c("right", "centre"), 3, 2)
+  dev.off()
   
   return(plot)
 }
+
 
 r <- netPage(col_var = c('observation', 'microscopy', 'molecular'), 
         row_var = c('early', 'mid', 'late'))
 
 
 
+# probably need to arrange each row, less the last, into their own 'grob', and
+# then stack those on top of each other in order to label the left side of each.
+# then add three different plots to the bottom  so that each may be labelled at
+# the bottom
+
+col_var <- c('aC', 'bC', 'cC')
+row_var <- c('aR', 'bR', 'cR', 'dR')
+nPlots <- (length(col_var) * length(row_var))
+nCol <- length(col_var)
+rowN <- nPlots / length(col_var)
+
+
+# need to populate this empty matrix with values 
+
+
+layout <- matrix(nrow = rowN, ncol = nCol, byrow = T,
+                 data = c(rep(1:(rowN -1), each = nCol),
+                          rowN:((rowN-1) + nCol) )
+)
+
+g1 <- arrangeGrob(grobs = grob_images[1:nCol], ncol = nCol, left = row_var)
+
+
+
+g2 <- arrangeGrob(grobs = grob_images, ncol = nCol, left = row_var)
+g3 <- arrangeGrob(grobs = grob_images, ncol = nCol, left = row_var)
+
+grid.arrange(grobs = gs, layout_matrix = layout)
 
 
 
 
-
-
-
-
-
-
-
-
-library(magick)
-
-m <- image_montage(r, geometry = 'x100+10+10', tile = '3')
-plot(m)
-
-image_write(m, path = "final.png", format = "png")
-
-
-image_append(c(image_append(r, stack = TRUE), wizard))
