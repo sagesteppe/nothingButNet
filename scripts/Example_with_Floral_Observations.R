@@ -105,16 +105,13 @@ early <- tet[['Early']]
 mid <- tet[['Mid']]
 late <- tet[['Late']]
 
-graphDrawer(mid, lbl_fnt = 14,
-            plot_name = 'mid',
+graphDrawer(late, lbl_fnt = 14,
+            plot_name = 'observation-early',
             edge_clr = 'lightseagreen',
             node_clrs  = c("#CEAB07", "deeppink2"),
             legend_items = c("Bombus", "Plant"),
-            fname = 'floral-mid', 
+            fname = 'molecular-late', 
             ntwrks_page = 12,
             col = 3
 )
 
-
-
-names(late)

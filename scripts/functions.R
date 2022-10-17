@@ -147,15 +147,15 @@ vert_lab_position <- function(x){
   
   
   dist_vals <- c(
-    rep(4, length(which((positions < 65) == TRUE))),
-    rep(c(2,3), each = 1, length.out = 
+    rep(4.5, length(which((positions < 65) == TRUE))),
+    rep(c(2.5,3.5), each = 1, length.out = 
           length(which((positions > 65 & positions < 125) == TRUE))),
     
-    rep(4, length(which((positions > 125 & positions < 245) == TRUE))),
+    rep(4.5, length(which((positions > 125 & positions < 245) == TRUE))),
     
-    rep(c(2,3), each = 1, length.out = 
+    rep(c(2.5,3.5), each = 1, length.out = 
           length(which((positions > 245 & positions < 295) == TRUE))),
-    rep(4, length(which((positions > 295) == TRUE)))
+    rep(4.5, length(which((positions > 295) == TRUE)))
     
     # '0' right, '-pi/2' up, 'pi' left, 'pi/2' down
   )
@@ -225,10 +225,9 @@ graph_dims <- function(ntwrks_page, col){
 
 #' Render multiple graphs of similar thematic content
 #' 
-#' this function serves to draw multiples of similar graphs, it's most logical 
-#' applications are in displaying information across temporal slices, or 
-#' spatial replicates or treatments thereof. It relies on most of the functions in 
-#' package.
+#' 'graph_dims' draw multiples of similar graphs, some applications are in 
+#' displaying information across temporal slices, or spatial replicates or 
+#' treatments thereof. It calls most of the functions in the package.
 #' 
 #' @param data = a list of matrcies, wherein one group of interacting organisms 
 #' (e.g.) insects are along one axis, like rows, and the other group of organisms
@@ -238,21 +237,21 @@ graph_dims <- function(ntwrks_page, col){
 #' the nodes (i.e. species)
 #' @param node_clrs, a set of two colors for your major groups
 #' @param bg_clr, a background color for the network, defaults to white
-#' @param label_fnt_size, label font size defaults to 9
+#' @param lbl_fnt, label font size defaults to 14
 #' @param legend item, the name of the two groups on the axis, 
 #' e.g. c('Insects', 'Plants')
 #' @param directory = directory to save graphs to, defaults to 'NetworkGraphs'
-#' @param fname = filename for the output graph, defaults to name of input ('data')
+#' @param fname = filename for the output graph, defaults to name of input ('data'),
+#' but see 'netPage' for naming conventions that allow quick assembly of plots
+#' onto a single page. 
 #' @param ntwrks_page = (numeric) how many networks per page? Defaults to 1
 #' @param col = (numeric) how many columns of networks? Defaults to 1
-#' @param H = (numeric) height of graph in pixels. If left blank is calculated
-#'  to maximize symmetrical space on an A4 page.
-#' @param graph sizes on an A4 page with standard margins based on 'ntwrks_page'
-#'  and 'col'
-#' @param W = (numeric) length of graph in pixels. If left blank is calculated 
+#' @param H = (numeric) height of graph in pixels. If left blank is calculated 
 #' to maximixe graph sizes on an A4 page with standard margins based on 
 #' 'ntwrks_page' and 'col'
-#' @return a graph to a location on disk. 
+#'  and 'col'
+#' @param W = see 'H'
+#' @return a graph to a location on disk as a png 
 #' @seealso 'blanker', 'vertex_names, vert_lab_position','set_colors',
 #' 'graph_dims'
 #' @export
@@ -299,23 +298,92 @@ graphDrawer <- function(data, plot_name, edge_clr, node_clrs,  bg_clr,
   template <- layout_in_circle(net)
   
   png(filename,
-      width = dims$W, height = dims$H, units = "px", pointsize = 12)
+      width = dims$W, height = dims$H, units = "px",pointsize = 12)
   
-  par(mar=c(5,6,5,6))
+  par(mar=c(3,6.5,3,6.5))
   plot(net, layout=template, 
        edge.color = edge_clr,
+       vertex.label.cex = 1.5,
        vertex.label = VNames,
-       vertex.label.dist= VLPs$dist_vals, vertex.label.degree = VLPs$degree_shift, 
-       label.font = lbl_fnt,
-       main = plot_name
+       vertex.label.dist= VLPs$dist_vals, 
+       vertex.label.degree = VLPs$degree_shift, 
+       label.font = lbl_fnt#,
+       #main = plot_name
        ) 
-    legend(x= -0.25, y=-1.35, legend_items, 
-           pch=21, col="#777777", 
-           pt.bg=node_clrs, 
-           pt.cex=2, cex=.8, bty="n", ncol=1)
+#    legend(x= -0.25, y=-1.35, legend_items, 
+#           pch=21, col="#777777", 
+#           pt.bg=node_clrs, 
+#           pt.cex=2, cex=.8, bty="n", ncol=1)
     
  invisible(dev.off())
  
- message(paste0("'", plot_name, "' has been rendered as a graph and saved to:\n ", filename))
+ message(paste0("'", plot_name, 
+                "' has been rendered as a graph and saved to:\n ", filename))
 
 }
+
+
+#' mosaic the grids together using gridExtra
+#' 
+#' netPage simply uses list.files with cowplot to pull back in your plots for 
+#' quick assembly into a grid. It's use is optional. 
+#' @param directory the folder holding your plots output from 'graphDrawer'
+#' @param col_var a character vector of grouping variable to sort columns from
+#'  left to right
+#' @param row_var a character vector of a grouping variable to sort rows from 
+#' left to right
+#' @return a cowplot arranged grid.
+
+netPage <- function(directory, col_var, row_var, col){
+  
+  if(missing(directory)) { directory <- 'NetworkGraphs' }
+  
+  rowOrder <- matrix( # this sets up a matrix to have rows groups in order
+    data = rep(row_var, each = length(col_var)),
+    ncol = length(col_var))
+  colOrder <- matrix( # this sets up a matrix to have column groups in order
+    data = rep(col_var, each = length(col_var)),
+    ncol = length(col_var), byrow = F)
+  image_orders <- matrix(paste0(colOrder, '-', rowOrder, '.png'), 
+                   ncol = length(col_var))
+  image_orders <- file.path(directory, image_orders)
+  
+  images = lapply(image_orders, png::readPNG)
+  grob_images = lapply(images, grid::rasterGrob)
+  
+  plot <- gridExtra::grid.arrange(grobs= grob_images, ncol = length(col_var), 
+                          top="Bill Walton")
+  
+  # using magick here makes sense. 
+#  input <- rep(logo, 12)
+#  image_montage(input, geometry = 'x100+10+10', tile = '4x3', bg = 'pink', shadow = TRUE)
+  
+  return(plot)
+}
+
+r <- netPage(col_var = c('observation', 'microscopy', 'molecular'), 
+        row_var = c('early', 'mid', 'late'))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+library(magick)
+
+m <- image_montage(r, geometry = 'x100+10+10', tile = '3')
+plot(m)
+
+image_write(m, path = "final.png", format = "png")
+
+
+image_append(c(image_append(r, stack = TRUE), wizard))
