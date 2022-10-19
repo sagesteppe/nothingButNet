@@ -356,29 +356,28 @@ netPage <- function(directory, col_var, row_var, col, fname){
   # we might need to arrange each row seperately in order to add the 
   # title to the left side. 
   
-  pdf(file = file.path(directory, fname), paper = 'a4')
-  plot <- gridExtra::grid.arrange(grobs= grob_images, ncol = length(col_var), 
-                          top="Bill Walton", left="mid", bottom = 'molecular')
+ # pdf(file = file.path(directory, fname), paper = 'a4')
+ # plot <- gridExtra::grid.arrange(grobs= grob_images, ncol = length(col_var), 
+#                          top="Bill Walton", left="mid", bottom = 'molecular')
 
 #  grid::grid.text(c("right", "centre"), 3, 2)
-  dev.off()
+ # dev.off()
   
-  return(plot)
+  return(grob_images)
 }
 
 
 r <- netPage(col_var = c('observation', 'microscopy', 'molecular'), 
         row_var = c('early', 'mid', 'late'))
 
-
-
+setwd('/home/sagesteppe/Documents/floral_observations')
 # probably need to arrange each row, less the last, into their own 'grob', and
 # then stack those on top of each other in order to label the left side of each.
 # then add three different plots to the bottom  so that each may be labelled at
 # the bottom
 
 col_var <- c('aC', 'bC', 'cC')
-row_var <- c('aR', 'bR', 'cR', 'dR')
+row_var <- c('aR', 'bR', 'cR')
 nPlots <- (length(col_var) * length(row_var))
 colN <- length(col_var)
 rowN <- nPlots / length(col_var)
@@ -386,25 +385,95 @@ rowN <- nPlots / length(col_var)
 
 # need to populate this empty matrix with values 
 
-
 layout <- matrix(nrow = rowN, ncol = colN, byrow = T,
                  data = c(rep(1:(rowN -1), each = colN),
                           rowN:((rowN-1) + colN) )
-)
+) # code complete
 
 
-x <- 1:(nPlots - rowN) +1
-res <- x[!x%%colN]
+# Recover the top grobs!!
+top_grobs <- split(r[1:(length(r) - rowN)],
+                   ceiling(seq_along(r[1:(length(r) - rowN)]) / rowN))
+names(top_grobs) <- paste0('t', seq(1:length(top_grobs)))
+
+# title up the real top grob
+t1 <- gridExtra::arrangeGrob(grobs = top_grobs$t1, ncol = colN, 
+                                        left = row_var[1], top = 'bill walton')
+# this will get all of the subsequent top grobs !!!!!!!!
+top_grobs <- mapply(gridExtra::arrangeGrob, 
+                grobs = top_grobs[2:length(top_grobs)], ncol = colN, 
+                left = row_var[2:(length(row_var)-1)])
+
+list2env(top_grobs,globalenv())
+
+# this recovers the bottom grobs
+L <- length(r)
+range <- ((L - rowN) + 1 ): L
+bottom_grobs <- split(r[((L - rowN) + 1 ): L],
+                      seq_along(range) / 1)
+names(bottom_grobs) <- paste0('b', seq(1:length(bottom_grobs)))
+
+b1 <- gridExtra::arrangeGrob(grobs = bottom_grobs$b1, bottom = col_var[1],
+                                          left = row_var[length(row_var)])
+bottoms <- mapply(gridExtra::arrangeGrob, 
+                  grobs = bottom_grobs[2:length(bottom_grobs)],
+                  bottom = col_var[2:(length(col_var))])
+
+list2env(bottoms,globalenv())
+
+# ensure the grobs are in the correct order for the mosaic. 
+g2p <- mget(ls(pattern = '[t|b][1-9]{1}'))
+groborder <- c(paste0('t', seq(1:9)), paste0('b', seq(1:9)))
+ord2grab <- match(groborder, names(g2p)) |> na.omit()
+g2p <- g2p[ord2grab]
+
+ml <- marrangeGrob(grobs = g2p, layout_matrix = layout)
+print(ml)
+dev.off()
+
+
+
+g1 <- gridExtra::arrangeGrob(grobs = r[1:colN], ncol = colN, left = row_var[1],
+                             top = 'Larry Bird x Bill Walton level shit-talking')
+g2 <- gridExtra::arrangeGrob(grobs = r[4:6], ncol = colN, left = row_var[2])
+
+
+g3 <- gridExtra::arrangeGrob(grobs = r[7], left = row_var[3],
+                             bottom = col_var[1])
+g4 <- gridExtra::arrangeGrob(grobs = r[8], bottom = col_var[2])
+g5 <- gridExtra::arrangeGrob(grobs = r[9], bottom = col_var[])
+
+gridExtra::grid.arrange(g2p$t1, g2p$t2, layout_matrix = layout)
 
 
 
 
-g1 <- arrangeGrob(grobs = grob_images[1:colN], ncol = colN, left = row_var)
-g2 <- arrangeGrob(grobs = grob_images, ncol = nCol, left = row_var)
-g3 <- arrangeGrob(grobs = grob_images, ncol = nCol, left = row_var)
+library(ggplotify)
 
-grid.arrange(grobs = gs, layout_matrix = layout)
+# SO EXAMPLE
 
+a <- grid::rectGrob(gp= grid::gpar(fill="chocolate1"))
+b <- grid::rectGrob(gp= grid::gpar(fill="cadetblue"))
+c <- grid::rectGrob(gp= grid::gpar(fill="cadetblue"))
+d <- grid::rectGrob(gp= grid::gpar(fill="chocolate1"))
 
+l<- mget(ls(pattern = '[a-d]'))
+names(l) <- letters[1:4]
+layout = rbind(c(1,2),
+               c(3,4))
 
+gridExtra::grid.arrange(l$a, l$b, l$c, l$d, layout_matrix = layout) # works
+gridExtra::grid.arrange(l[['a']], l[['b']], l[['c']], l[['d']], 
+                        layout_matrix = layout) # works
+gridExtra::grid.arrange(l['a'], l['b'], l['c'], l['d'], ncol=2) # does not
+
+lapply(l, gridExtra::grid.arrange) # no bueno, one at a time !
+
+do.call(gridExtra::grid.arrange, l) # awesome one at a time...
+do.call(gridExtra::grid.arrange, l, layout_matrix = layout) # but args !?
+do.call(gridExtra::grid.arrange, c(l, layout_matrix = layout)) # but args
+do.call(gridExtra::grid.arrange, c(l, ncol=2)) # works ... but I need layout...
+
+??grid.arrange
+# so what ? how do i layout.matrix ?!?!?!?
 
