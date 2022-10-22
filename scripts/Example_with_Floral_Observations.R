@@ -17,7 +17,7 @@ observation_times <- read.csv(
   distinct(site, week, .keep_all = T)
 
 bee_obs <- read.csv(
-  paste0(p2d, '/', files[grep('queen_observations', files)]) ) %>% 
+  paste0(p2d, '/', files[grep('queen_observations', files)]) ) #%>% 
   filter(caste == 'q') %>% 
   mutate(species = gsub('\\..*$', '', species)) %>% 
   select(site, doy, week, tot.obs.length, species, plant.species,
@@ -44,30 +44,31 @@ arranged_plants <- c('C.gunnisonii', 'E.grandiflorum',
                      
                      "E.triflora","P.pulcherrima",
                      
-                     "M.ciliata" ,"M.fusiformis",
-                     
                      "A.lewisii",
-                     "C.lanceolata",
-                     "D.involucrata",
                      "S.sp",
-                     "V.praemorsa", # ???/
+                     "V.praemorsa", 
+                     "C.lanceolata",
                      
+                     "D.pulchellum",
+                     
+                     "M.ciliata" ,"M.fusiformis",
                      "H.capitatum", "H.fendleri",
                      "A.urticifolia", "P.procera", "P.bracteosa",
                      
                      "C.parryi", "D.hoopesii", "H.quinquenervis", "L.bigelovii",
                      "E.speciosus", "S.integerrimus", "T.officinale", "W.arizonica",
                      
-                     "F.speciosa",
+                     "D.involucrata",
                      "V.occidentalis",
-                     "D.pulchellum",
+                      
+                     "F.speciosa",
                      'O.occidentalis'
 )
 
 arranged_bees <- c('bifarius', 'mixtus', 'rufocinctus', 'sylvicola',
                    'flavifrons',
                    'appositus', 'californicus', 'nevadensis', 
-                   'unknown')
+                   'unknown') 
 
 rm(p2d, files, observation_times)
 

@@ -108,12 +108,9 @@ vertex_names <- function(x){
   
   vertice_names <- c(rownames(x), colnames(x))
   vertice_names <- sub('^X$', '', vertice_names)
-  vertice_names <- sub('^X1$', '', vertice_names)
-  vertice_names <- sub('^X3$', '', vertice_names)
-  vertice_names <- sub('^X2$', '', vertice_names)
-  vertice_names <- sub('^X.1$', '', vertice_names)
-  vertice_names <- sub('^X.2$', '', vertice_names)
-  vertice_names <- sub('^X.3$', '', vertice_names)
+  vertice_names <- sub('^X[0-9]$', '', vertice_names)
+  vertice_names <- sub('^X.[0-9]$', '', vertice_names)
+  vertice_names <- sub('^X[0-9].[0-9]$', '', vertice_names)
   
   vertice_names <- gsub("\\.(?=[A-Za-z])", ". ", vertice_names, perl = TRUE)
 }
@@ -278,6 +275,8 @@ graphDrawer <- function(data, plot_name, edge_clr, node_clrs,  bg_clr,
     dims <- graph_dims(ntwrks_page, col)
   }
   
+  if(missing(edge_clr)) {edge_clr <- 'black'}
+  
   filename <- file.path(directory, fname)
   
   ifelse(!dir.exists(file.path(directory)),
@@ -293,6 +292,10 @@ graphDrawer <- function(data, plot_name, edge_clr, node_clrs,  bg_clr,
   net <- set_colors(x = blanked_data, net, node_clrs, VNames = VNames)
   
   V(net)$label.color <- 'black'
+  
+  V(net)$size = deg$res
+  E(net)$width = E(net)$weight
+  
   V(net)$size = 5*sqrt(deg$res) 
   E(net)$width = E(net)$weight/4
   template <- layout_in_circle(net)
@@ -307,8 +310,7 @@ graphDrawer <- function(data, plot_name, edge_clr, node_clrs,  bg_clr,
        vertex.label = VNames,
        vertex.label.dist= VLPs$dist_vals, 
        vertex.label.degree = VLPs$degree_shift, 
-       label.font = lbl_fnt#,
-       #main = plot_name
+       label.font = lbl_fnt
        ) 
 #    legend(x= -0.25, y=-1.35, legend_items, 
 #           pch=21, col="#777777", 
@@ -332,6 +334,9 @@ graphDrawer <- function(data, plot_name, edge_clr, node_clrs,  bg_clr,
 #'  left to right
 #' @param row_var a character vector of a grouping variable to sort rows from 
 #' left to right
+#' @example 
+#' netPage(col_var = c('observation', 'microscopy', 'molecular'), 
+#"        row_var = c('early', 'mid', 'late'))
 #' @return a cowplot arranged grid.
 
 netPage <- function(directory, col_var, row_var, col, fname){
@@ -407,7 +412,7 @@ netPage <- function(directory, col_var, row_var, col, fname){
   g2p <- g2p[ord2grab]
   
   # place on the page and print.
-  ml <- marrangeGrob(grobs = g2p, layout_matrix = layout, top = '')
+  ml <- gridExtra::marrangeGrob(grobs = g2p, layout_matrix = layout, top = '')
   pdf(file = file.path(directory, fname), paper = 'a4')
   print(ml)
   invisible(dev.off())
@@ -417,8 +422,3 @@ netPage <- function(directory, col_var, row_var, col, fname){
                  file.path(directory, fname)))
 }
 
-
-netPage(col_var = c('observation', 'microscopy', 'molecular'), 
-        row_var = c('early', 'mid', 'late'))
-
-setwd('/home/sagesteppe/Documents/floral_observations')
