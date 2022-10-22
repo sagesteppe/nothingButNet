@@ -45,51 +45,50 @@ blanker <- function(x){
   
   netL <- nrow(x) + ncol(x) 
   QnetL <- round(netL / 4 , 0 ) 
+  colN <- ceiling(netL/10)
+  if(colN < 3){colN <- 3}
+  thirdStart <- round( round(netL * 3/4) - (colN*3/4) ) 
   
   if(
     nrow(x) == ncol(x)) {
     
-    A = x[1:floor(QnetL),] 
+    A = x[1:round(QnetL),] 
     B = matrix(data = 0, ncol = ncol(x), nrow = 3)
-    C = x[(floor(QnetL) + 1):nrow(x),] 
+    C = x[(round(QnetL) + 1):nrow(x),] 
     p <- rbind(A,B,C)
     
     p <- data.frame(
-      p[,1:(floor(QnetL))],
+      p[,1:(round(QnetL))],
       matrix(data = 0, nrow(p), ncol = 3),
-      p[,(floor(QnetL)+1):ncol(x)]
+      p[,(round(QnetL)+1):ncol(x)]
     )
     
   } else if(
     nrow(x) < QnetL
   ) {
     
+    
     p <- data.frame(
-      x[,1:(floor(QnetL) - nrow(x))], 
-      matrix(data = 0, nrow(x), ncol = 3),
-      x[,((floor(QnetL) - nrow(x))+1):(floor(QnetL *2 ) + 3)],
-      matrix(data = 0, nrow(x), ncol = 3),
-      x[,(floor(QnetL *2 ) + 4):ncol(x)] )
-    
-  #  p <- data.frame( # this is the ORIGINAL
-  #    x[,1:floor(QnetL)], 
-  #    matrix(data = 0, nrow(x), ncol = 3),
-  #    x[,(floor(QnetL) + 1):floor(ncol(x)/2)],
-  #    matrix(data = 0, nrow(x), ncol = 3),
-  #    x[,(floor(ncol(x)/2) + 1):ncol(x)]
-  #  ) 
-    
+      x[,1:round((netL * 1/4) - nrow(x))],
+      matrix(data = 0, nrow(x), ncol = colN),
+      x[,round(((netL * 1/4) - nrow(x)) + 1):thirdStart], 
+      matrix(data = 0, nrow(x), ncol = colN),
+      x[,(thirdStart + 1):ncol(x)] 
+    )
+
   } else {
     
-    A = x[1:floor(QnetL),] 
-    B = matrix(data = 0, ncol = ncol(x), nrow = 3)
-    C = x[(floor(QnetL) + 1):nrow(x),] 
-    p <- rbind(A,B,C)
     
+    pA <- rbind(
+      x[1:(netL / 4),],
+      matrix(data = 0, nrow = colN, ncol = ncol(x)),
+      x[((netL / 4) +1):nrow(x),]
+    )
+    r <- (netL / 2)  + (netL / 4) -  nrow(x)
     p <- data.frame(
-      p[,1:(floor(ncol(p)/2) + 2)],
-      matrix(data = 0, nrow(p), ncol = 3),
-      p[,(floor(ncol(p)/2) + 5):ncol(p)]
+      pA[,1:r], 
+      matrix(data = 0, nrow(pA), ncol = colN),
+      pA[,(r + 1):ncol(x)] 
     )
     
   }
@@ -298,7 +297,11 @@ graphDrawer <- function(data, plot_name, edge_clr, node_clrs,  bg_clr,
   
   V(net)$label.color <- 'black'
   V(net)$size = 5*sqrt(deg$res) 
-  E(net)$width = E(net)$weight/10
+  E(net)$width = E(net)$weight/4
+  
+ # V(net)$size = deg$res 
+  #E(net)$width = E(net)$weight
+  
   template <- layout_in_circle(net)
   
   png(filename,
