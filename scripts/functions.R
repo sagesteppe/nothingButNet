@@ -65,12 +65,19 @@ blanker <- function(x){
   ) {
     
     p <- data.frame(
-      x[,1:floor(QnetL)], 
+      x[,1:(floor(QnetL) - nrow(x))], 
       matrix(data = 0, nrow(x), ncol = 3),
-      x[,(floor(QnetL) + 1):floor(ncol(x)/2)],
+      x[,((floor(QnetL) - nrow(x))+1):(floor(QnetL *2 ) + 3)],
       matrix(data = 0, nrow(x), ncol = 3),
-      x[,(floor(ncol(x)/2) + 1):ncol(x)]
-    ) 
+      x[,(floor(QnetL *2 ) + 4):ncol(x)] )
+    
+  #  p <- data.frame( # this is the ORIGINAL
+  #    x[,1:floor(QnetL)], 
+  #    matrix(data = 0, nrow(x), ncol = 3),
+  #    x[,(floor(QnetL) + 1):floor(ncol(x)/2)],
+  #    matrix(data = 0, nrow(x), ncol = 3),
+  #    x[,(floor(ncol(x)/2) + 1):ncol(x)]
+  #  ) 
     
   } else {
     
@@ -141,7 +148,6 @@ vert_lab_position <- function(x){
     rep(0, length(which((positions > 295) == TRUE)))
     # '0' right, '-pi/2' up, 'pi' left, 'pi/2' down
   )
-  
   
   dist_vals <- c(
     rep(4.5, length(which((positions < 65) == TRUE))),
@@ -260,18 +266,18 @@ graphDrawer <- function(data, plot_name, edge_clr, node_clrs,  bg_clr,
   if(missing(lbl_fnt)) { lbl_fnt <- 14 }
   if(missing(directory)) { directory <- 'NetworkGraphs' }
   if(missing(fname)) { fname <- paste0(substitute(data), '.png') 
-  } else {fname <- paste0(fname, '.png')}
+    } else {fname <- paste0(fname, '.png')}
   
   if(missing(ntwrks_page)) { ntwrks_page <- 1 } | if(missing(col)) { col <- 1 }
   if(missing(H)) { H <- NA}  |  if(missing(W)) { W <- NA}
   dims <- list('H' = H, 'W' = W)
   if(is.na(dims$H) + is.na(dims$W) == 0){
     dims 
-  } else if(is.na(dims$H) & !is.na(dims$W)){
+    } else if(is.na(dims$H) & !is.na(dims$W)){
     dims$H <- dims$W
-  } else if(is.na(dims$W) & !is.na(dims$H)){
+      } else if(is.na(dims$W) & !is.na(dims$H)){
     dims$W <- dims$H
-  } else {
+        } else {
     dims <- graph_dims(ntwrks_page, col)
   }
   
@@ -292,16 +298,12 @@ graphDrawer <- function(data, plot_name, edge_clr, node_clrs,  bg_clr,
   net <- set_colors(x = blanked_data, net, node_clrs, VNames = VNames)
   
   V(net)$label.color <- 'black'
-  
-  V(net)$size = deg$res
-  E(net)$width = E(net)$weight
-  
-  V(net)$size = 5*sqrt(deg$res) 
-  E(net)$width = E(net)$weight/4
+  #V(net)$size = 5*sqrt(deg$res) 
+  #E(net)$width = E(net)$weight/4
   template <- layout_in_circle(net)
   
   png(filename,
-      width = dims$W, height = dims$H, units = "px",pointsize = 12)
+      width = dims$W, height = dims$H, units = "px", pointsize = 12)
   
   par(mar=c(3,6.5,3,6.5))
   plot(net, layout=template, 
