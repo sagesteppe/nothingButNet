@@ -84,18 +84,13 @@ resin <- bee_obs_wk %>%  # if sp. we need to leave genus spelt out, if epithet p
   lapply(., select, -period, -Method) %>% 
   map(~ .x  %>% 
         column_to_rownames(., var = 'bombus.species') %>% 
-        mutate(across(.cols = everything(), ~replace_na(.x, 0))) %>% 
-        as.matrix)
-
-tet <- lapply(resin, arrange_nets, col_arrange = arranged_plants, 
+        mutate(across(.cols = everything(), ~replace_na(.x, 0)))) %>% 
+  map(., function(x){t(scales::rescale(t(x))) * 100}) %>% # scale big datasets. 
+  map(., arrange_nets, col_arrange = arranged_plants, 
         row_arrange = arranged_bees)
 
-list2env(tet,env = environment())
+list2env(resin,env = environment())
 
-# this works to sensibly rescale the data. 
-
-Mid.Bracken <- t(Mid.Bracken)
-Mid.Bracken <- t(scales::rescale(Mid.Bracken) ) * 100
 
 graphDrawer(Mid.Bracken, lbl_fnt = 14,
             plot_name = 'Mid.Bracken',
