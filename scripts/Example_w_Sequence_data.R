@@ -84,22 +84,24 @@ resin <- bee_obs_wk %>%  # if sp. we need to leave genus spelt out, if epithet p
   lapply(., select, -period, -Method) %>% 
   map(~ .x  %>% 
         column_to_rownames(., var = 'bombus.species') %>% 
-        mutate(across(.cols = everything(), ~replace_na(.x, 0)),
-               across(.cols = everything(), ~ .x /10000)) %>% 
+        mutate(across(.cols = everything(), ~replace_na(.x, 0))),  
+               across(.cols = everything(), ~ scales::rescale(.x)) %>%  # re-scale here instead
         as.matrix)
 
 tet <- lapply(resin, arrange_nets, col_arrange = arranged_plants, 
         row_arrange = arranged_bees)
 
-d <- tet[['Early.BLAST']]
-d <- tet[['Mid.BLAST']]
+list2env(tet,env = environment())
 
-graphDrawer(d, lbl_fnt = 14,
+graphDrawer(Early.Kraken, lbl_fnt = 14,
             plot_name = 'mid.blast',
             edge_clr = 'lightseagreen',
             node_clrs  = c("#CEAB07", "deeppink2"),
             legend_items = c("Bombus", "Plant"),
-            fname = 'test', 
             ntwrks_page = 12,
             col = 3
 )
+
+
+head(Mid.Kraken)
+

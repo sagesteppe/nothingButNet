@@ -265,8 +265,7 @@ graphDrawer <- function(data, plot_name, edge_clr, node_clrs,  bg_clr,
   if(missing(plot_name)) { plot_name <- substitute(data) }
   if(missing(lbl_fnt)) { lbl_fnt <- 14 }
   if(missing(directory)) { directory <- 'NetworkGraphs' }
-  if(missing(fname)) { fname <- paste0(substitute(data), '.png') 
-    } else {fname <- paste0(fname, '.png')}
+  if(missing(fname)) { fname <- paste0(substitute(data), '.png')}
   
   if(missing(ntwrks_page)) { ntwrks_page <- 1 } | if(missing(col)) { col <- 1 }
   if(missing(H)) { H <- NA}  |  if(missing(W)) { W <- NA}
@@ -298,8 +297,8 @@ graphDrawer <- function(data, plot_name, edge_clr, node_clrs,  bg_clr,
   net <- set_colors(x = blanked_data, net, node_clrs, VNames = VNames)
   
   V(net)$label.color <- 'black'
-  #V(net)$size = 5*sqrt(deg$res) 
-  #E(net)$width = E(net)$weight/4
+  V(net)$size = 5*sqrt(deg$res) 
+  E(net)$width = E(net)$weight/10
   template <- layout_in_circle(net)
   
   png(filename,
