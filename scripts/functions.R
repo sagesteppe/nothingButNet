@@ -319,6 +319,7 @@ graphDrawer <- function(data, plot_name, edge_clr, node_clrs,  bg_clr,
  
  message(paste0("'", plot_name, 
                 "' has been rendered as a graph and saved to:\n ", filename))
+ 
 
 }
 
