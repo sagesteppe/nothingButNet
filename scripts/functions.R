@@ -213,8 +213,9 @@ set_colors <- function(x, net, node_clrs,  bg_clr, VNames){
 #' @col = the number of columns to spread the networks across
 #' @seealso = 'graphDrawer'
 #' @export
-graph_dims <- function(ntwrks_page, col){
+graph_dims <- function(ntwrks_page){
   
+  col <- length(col_var)
   W = round(1984 / col, 0)
   H = round(2864 / (ntwrks_page/col), 0 )
   if(W > H){ W <- H} else {H <- W}
@@ -222,6 +223,7 @@ graph_dims <- function(ntwrks_page, col){
   dims <- list('W' = W, 
                'H' = H)
   return(dims)
+  
 }
 
 
@@ -299,9 +301,6 @@ graphDrawer <- function(data, plot_name, edge_clr, node_clrs,  bg_clr,
   V(net)$size = 5*sqrt(deg$res) 
   E(net)$width = E(net)$weight/4
   
- # V(net)$size = deg$res 
-  #E(net)$width = E(net)$weight
-  
   template <- layout_in_circle(net)
   
   png(filename,
@@ -316,10 +315,6 @@ graphDrawer <- function(data, plot_name, edge_clr, node_clrs,  bg_clr,
        vertex.label.degree = VLPs$degree_shift, 
        label.font = lbl_fnt
        ) 
-#    legend(x= -0.25, y=-1.35, legend_items, 
-#           pch=21, col="#777777", 
-#           pt.bg=node_clrs, 
-#           pt.cex=2, cex=.8, bty="n", ncol=1)
     
  invisible(dev.off())
  
@@ -338,31 +333,34 @@ graphDrawer <- function(data, plot_name, edge_clr, node_clrs,  bg_clr,
 #'  left to right
 #' @param row_var a character vector of a grouping variable to sort rows from 
 #' left to right
+#' @param fname a file name for the rendered mosaic
+#' @param sep_char a seperator between the names of the plots to read in, defaults to none
+#' @param mainT main title as a string
 #' @example 
 #' netPage(col_var = c('observation', 'microscopy', 'molecular'), 
 #"        row_var = c('early', 'mid', 'late'))
 #' @return a cowplot arranged grid.
-
-netPage <- function(directory, col_var, row_var, col, fname){
+netPage <- function(directory, col_var, row_var, fname, sep_char) {
   
   if(missing(directory)) { directory <- 'NetworkGraphs' }
   if(missing(fname)) {fname <- 'mosaiced_Nets.pdf'}
+  if(missing(sep_char))  {sep_char <- ''}
   
   rowOrder <- matrix( # this sets up a matrix to have rows groups in order
     data = rep(row_var, each = length(col_var)),
-    ncol = length(col_var))
+    ncol = length(col_var), byrow = T)
   colOrder <- matrix( # this sets up a matrix to have column groups in order
     data = rep(col_var, each = length(col_var)),
     ncol = length(col_var), byrow = F)
-  image_orders <- matrix(paste0(colOrder, '-', rowOrder, '.png'), 
+  
+  image_orders <- as.vector(t(image_orders)) 
+  image_orders <- matrix(paste0(colOrder, sep_char, rowOrder, '.png'), 
                    ncol = length(col_var))
   image_orders <- file.path(directory, image_orders)
   
   images = lapply(image_orders, png::readPNG)
   grob_images = lapply(images, grid::rasterGrob)
   
-  col_var <- c('aC', 'bC', 'cC')
-  row_var <- c('aR', 'bR', 'cR')
   nPlots <- (length(col_var) * length(row_var))
   colN <- length(col_var)
   rowN <- nPlots / length(col_var)
@@ -371,7 +369,7 @@ netPage <- function(directory, col_var, row_var, col, fname){
   layout <- matrix(nrow = rowN, ncol = colN, byrow = T,
                    data = c(rep(1:(rowN -1), each = colN),
                             rowN:((rowN-1) + colN) )
-  ) 
+  )
   
   # Recover the top grobs!!
   top_grobs <- split(grob_images[1:(length(grob_images) - rowN)],
@@ -425,4 +423,93 @@ netPage <- function(directory, col_var, row_var, col, fname){
                  "' has been rendered as a pdf and saved to:\n ",
                  file.path(directory, fname)))
 }
+
+
+netPage <- function(directory, col_var, row_var, fname, sep_char, mainT) {
+  
+  if(missing(directory)) { directory <- 'NetworkGraphs' }
+  if(missing(fname)) {fname <- 'mosaiced_Nets.pdf'}
+  if(missing(sep_char))  {sep_char <- ''}
+  if(missing(mainT))  {mainT <- 'Bill walton thinks u forgot a title'}
+  
+  rowOrder <- matrix( # this sets up a matrix to have rows groups in order
+    data = rep(row_var, each = length(col_var)),
+    ncol = length(col_var), byrow = T)
+  colOrder <- matrix( # this sets up a matrix to have column groups in order
+    data = rep(col_var, each = length(col_var)),
+    ncol = length(col_var), byrow = F)
+  image_orders <- matrix(paste0(colOrder, sep_char, rowOrder, '.png'), 
+                         ncol = length(col_var))
+  image_orders <- as.vector(t(image_orders)) 
+  image_orders <- file.path(directory, image_orders)
+  
+  images = lapply(image_orders, png::readPNG)
+  grob_images = lapply(images, grid::rasterGrob)
+  
+  nPlots <- (length(col_var) * length(row_var))
+  colN <- length(col_var)
+  rowN <- nPlots / length(col_var)
+  
+  # define the layout
+  layout <- matrix(nrow = rowN, ncol = colN, byrow = T,
+                   data = c(rep(1:(rowN -1), each = colN),
+                            rowN:((rowN-1) + colN) )
+  )
+  
+  # Recover the top grobs!!
+  top_grobs <- split(grob_images[1:(length(grob_images) - rowN)],
+                     ceiling(seq_along(grob_images[1:(length(grob_images) -
+                                                        rowN)]) / rowN))
+  names(top_grobs) <- paste0('t', seq(1:length(top_grobs)))
+  
+  # title up the real top grob
+  t1 <- gridExtra::arrangeGrob(grobs = top_grobs$t1, ncol = colN, 
+                               padding = unit(0.0, "line"),
+                               left = row_var[1], top = mainT)
+  
+  # this will get all of the subsequent top grobs !!!!!!!!
+  top_grobs <- mapply(gridExtra::arrangeGrob, 
+                      grobs = top_grobs[2:length(top_grobs)], ncol = colN, 
+                      left = row_var[2:(length(row_var)-1)], 
+                      padding = unit(0.0, "line"))
+  
+  list2env(top_grobs,env = environment())
+  
+  # this recovers the bottom grobs
+  L <- length(grob_images)
+  range <- ((L - rowN) + 1 ): L
+  bottom_grobs <- split(grob_images[((L - rowN) + 1 ): L],
+                        seq_along(range) / 1)
+  names(bottom_grobs) <- paste0('b', seq(1:length(bottom_grobs)))
+  
+  b1 <- gridExtra::arrangeGrob(grobs = bottom_grobs$b1, bottom = col_var[1],
+                               left = row_var[length(row_var)],
+                               padding = unit(0.0, "line"))
+  bottoms <- mapply(gridExtra::arrangeGrob, 
+                    grobs = bottom_grobs[2:length(bottom_grobs)],
+                    bottom = col_var[2:(length(col_var))],
+                    padding = unit(0.0, "line"))
+  
+  list2env(bottoms,env = environment())
+  
+  # ensure the grobs are in the correct order for the mosaic. 
+  g2p <- mget(ls(pattern = '[t|b][1-9]{1}'))
+  groborder <- c(paste0('t', seq(1:9)), paste0('b', seq(1:9)))
+  ord2grab <- match(groborder, names(g2p)) |> na.omit()
+  g2p <- g2p[ord2grab]
+  
+  # place on the page and print.
+  ml <- gridExtra::marrangeGrob(grobs = g2p, layout_matrix = layout, top = '')
+  pdf(file = file.path(directory, fname), paper = 'a4')
+  print(ml)
+  invisible(dev.off())
+  
+  message(paste0("'", fname, 
+                 "' has been rendered as a pdf and saved to:\n ",
+                 file.path(directory, fname)))
+
+}
+
+
+
 

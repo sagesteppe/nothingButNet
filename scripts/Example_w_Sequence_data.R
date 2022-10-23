@@ -24,6 +24,7 @@ kraken <- read.csv(file.path(p2d, files[grep('kraken', files)]))  %>%
 
 arranged_plants <- read.csv(file.path(p2d, files[grep('species', files)])) %>% 
   pull(abbreviation)
+plants_legend <- read.csv(file.path(p2d, files[grep('species', files)])) 
 
 seqs <- rbind(blast, bracken, kraken) %>% 
   mutate(sample.id = as.numeric(sample.id)) 
@@ -80,24 +81,82 @@ resin <- bee_obs_wk %>%  # if sp. we need to leave genus spelt out, if epithet p
         pivot_wider(names_from = Taxon, values_from = Interactions_total)
       ) %>% 
   bind_rows() %>% 
-  split(f = list(.$period, .$Method) ) %>% 
+  split(f = list(.$Method, .$period) ) %>% 
   lapply(., select, -period, -Method) %>% 
   map(~ .x  %>% 
         column_to_rownames(., var = 'bombus.species') %>% 
         mutate(across(.cols = everything(), ~replace_na(.x, 0)))) %>% 
   map(., function(x){t(scales::rescale(t(x))) * 100}) %>% # scale big datasets. 
-  map(., arrange_nets, col_arrange = arranged_plants, 
-        row_arrange = arranged_bees)
+  map(., arrange_nets, col_arrange = arranged_plants, # now use the ARRANGE NET fun
+        row_arrange = arranged_bees) # to remove empty plants
 
 list2env(resin,env = environment())
 
 
-graphDrawer(Mid.Bracken, lbl_fnt = 14,
-            plot_name = 'Mid.Bracken',
+graphDrawer(Kraken.Mid, lbl_fnt = 14,
+            plot_name = 'Mid.BLAST',
             edge_clr = 'lightseagreen',
             node_clrs  = c("#CEAB07", "deeppink2"),
             legend_items = c("Bombus", "Plant"),
-            ntwrks_page = 12,
+            ntwrks_page = 9,
             col = 3
 )
+
+ # PROBLEM CURRENTLY READING IN ACROSS INTENDED PATTERNS - 
+# TOP ROW IS BLAST, AND NEXT ROW IS BRACKEN 
+
+netPage(col_var = c('Kraken', 'Bracken', 'BLAST'), mainT = 'Comparision of Foraging
+             Patterns from Three Sequence Alignment Algorithms',
+              row_var = c('Early', 'Mid', 'Late'), sep = '.')
+
+
+graph_dims <- function(ntwrks_page){
+  
+  col <- length(col_var)
+  W = round(1984 / col, 0)
+  H = round(2864 / (ntwrks_page/col), 0 )
+  if(W > H){ W <- H} else {H <- W}
+  
+  dims <- list('W' = W, 
+               'H' = H)
+  return(dims)
+}
+
+
+#' Creates a simple abbreviation legend for graphs
+#' 
+#' 
+#' @param values a vector of names 
+#' @param colN number of columns ot spread legend across
+#' @fname a file name for the legend, defaults to legend. 
+#' @ntwrks_page the number of networks you plan to place on the page
+#' 
+legenDrawer <- function(values, colN, directory, fname, ntwrks_page){
+  
+  if(missing(directory)) { directory <- 'NetworkGraphs' }
+  if(missing(fname)) {fname <- 'legend.png'}
+  
+  col_var <- rep('A',length(colN))
+  dims <- graph_dims(ntwrks_page, col_var)
+
+  lname <- file.path(directory, fname)
+  
+  grp <- ceiling(length(values)/colN)
+  l <- (grp * colN) - length(values)
+  padding <- rep("", l)
+  
+  values <- c(values, rep("", l))
+  v <- matrix(data = values , nrow = grp, ncol = colN)
+  tt2 <- gridExtra::ttheme_minimal(core=list(fg_params=list(hjust=0, x=0.1)),
+                                   rowhead=list(fg_params=list(hjust=0, x=0)))
+  
+  p <- gridExtra::tableGrob(v, theme = tt2)
+  
+  png(lname, height = dims$H, width = 1984)
+  gridExtra::grid.arrange(p)
+  dev.off()
+  
+}
+
+legenDrawer(plants_legend$full, colN = 8)
 
