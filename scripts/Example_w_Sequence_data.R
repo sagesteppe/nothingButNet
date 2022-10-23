@@ -102,61 +102,14 @@ graphDrawer(Kraken.Mid, lbl_fnt = 14,
             col = 3
 )
 
- # PROBLEM CURRENTLY READING IN ACROSS INTENDED PATTERNS - 
-# TOP ROW IS BLAST, AND NEXT ROW IS BRACKEN 
 
 netPage(col_var = c('Kraken', 'Bracken', 'BLAST'), mainT = 'Comparision of Foraging
              Patterns from Three Sequence Alignment Algorithms',
               row_var = c('Early', 'Mid', 'Late'), sep = '.')
 
+plsl <- plants_legend %>% 
+  filter(str_detect(full, '.sp.$', negate = T)) %>% 
+  pull(full) 
 
-graph_dims <- function(ntwrks_page){
-  
-  col <- length(col_var)
-  W = round(1984 / col, 0)
-  H = round(2864 / (ntwrks_page/col), 0 )
-  if(W > H){ W <- H} else {H <- W}
-  
-  dims <- list('W' = W, 
-               'H' = H)
-  return(dims)
-}
-
-
-#' Creates a simple abbreviation legend for graphs
-#' 
-#' 
-#' @param values a vector of names 
-#' @param colN number of columns ot spread legend across
-#' @fname a file name for the legend, defaults to legend. 
-#' @ntwrks_page the number of networks you plan to place on the page
-#' 
-legenDrawer <- function(values, colN, directory, fname, ntwrks_page){
-  
-  if(missing(directory)) { directory <- 'NetworkGraphs' }
-  if(missing(fname)) {fname <- 'legend.png'}
-  
-  col_var <- rep('A',length(colN))
-  dims <- graph_dims(ntwrks_page, col_var)
-
-  lname <- file.path(directory, fname)
-  
-  grp <- ceiling(length(values)/colN)
-  l <- (grp * colN) - length(values)
-  padding <- rep("", l)
-  
-  values <- c(values, rep("", l))
-  v <- matrix(data = values , nrow = grp, ncol = colN)
-  tt2 <- gridExtra::ttheme_minimal(core=list(fg_params=list(hjust=0, x=0.1)),
-                                   rowhead=list(fg_params=list(hjust=0, x=0)))
-  
-  p <- gridExtra::tableGrob(v, theme = tt2)
-  
-  png(lname, height = dims$H, width = 1984)
-  gridExtra::grid.arrange(p)
-  dev.off()
-  
-}
-
-legenDrawer(plants_legend$full, colN = 8)
+legenDrawer(plsl, colN = 8, ntwrks_page = 9)
 

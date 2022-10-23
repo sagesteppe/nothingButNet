@@ -210,12 +210,11 @@ set_colors <- function(x, net, node_clrs,  bg_clr, VNames){
 #' page margins (2.97cm top & bottom, 2.1 cm sides). It is easily modifiable for
 #' alternative dimensions. It assumes you want to fill an entire page with graphs.
 #' @param ntwrks_page = the number of networks to place on the page
-#' @col = the number of columns to spread the networks across
-#' @seealso = 'graphDrawer'
+#' @col  the number of columns to spread the networks across
+#' @seealso  'graphDrawer', 'legenDrawer'
 #' @export
-graph_dims <- function(ntwrks_page){
+graph_dims <- function(ntwrks_page, col){
   
-  col <- length(col_var)
   W = round(1984 / col, 0)
   H = round(2864 / (ntwrks_page/col), 0 )
   if(W > H){ W <- H} else {H <- W}
@@ -425,6 +424,20 @@ netPage <- function(directory, col_var, row_var, fname, sep_char) {
 }
 
 
+#' mosaic the grids together using gridExtra
+#' 
+#' netPage simply uses list.files with cowplot to pull back in your plots for 
+#' quick assembly into a grid. It's use is optional. 
+#' @param directory the folder holding your plots output from 'graphDrawer'
+#' @param col_var a character vector of grouping variable to sort columns from
+#'  left to right
+#' @param row_var a character vector of a grouping variable to sort rows from 
+#' left to right
+#' @example 
+#' netPage(col_var = c('observation', 'microscopy', 'molecular'), 
+#"        row_var = c('early', 'mid', 'late'))
+#' @return a cowplot arranged grid.
+
 netPage <- function(directory, col_var, row_var, fname, sep_char, mainT) {
   
   if(missing(directory)) { directory <- 'NetworkGraphs' }
@@ -511,5 +524,37 @@ netPage <- function(directory, col_var, row_var, fname, sep_char, mainT) {
 }
 
 
-
+#' Creates a simple abbreviation legend for graphs
+#' 
+#' @param values a vector of names 
+#' @param LegcolN number of columns to spread legend across
+#' @param colN number of columns that nets will be split across
+#' @ntwrks_page the number of networks you plan to place on the page
+#' @param directory location to size legend before assembling to final product
+#' @fname a file name for the legend, defaults to legend. 
+#'  
+legenDrawer <- function(values, LegcolN, colN, ntwrks_page, directory, fname){
+  
+  if(missing(directory)) { directory <- 'NetworkGraphs' }
+  if(missing(fname)) {fname <- 'legend.png'}
+  
+  dims <- graph_dims(ntwrks_page, col = colN)
+  
+  lname <- file.path(directory, fname)
+  grp <- ceiling(length(values)/LegcolN)
+  l <- (grp * LegcolN) - length(values)
+  padding <- rep("", l)
+  
+  values <- c(values, rep("", l))
+  v <- matrix(data = values , nrow = grp, ncol = LegcolN)
+  tt2 <- gridExtra::ttheme_minimal(core=list(fg_params=list(hjust=0, x=0.1)),
+                                   rowhead=list(fg_params=list(hjust=0, x=0)))
+  
+  p <- gridExtra::tableGrob(v, theme = tt2)
+  
+  png(lname, height = dims$H, width = 1984)
+  gridExtra::grid.arrange(p)
+  dev.off()
+  
+}
 
