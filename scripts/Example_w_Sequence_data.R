@@ -111,10 +111,102 @@ plsl <- plants_legend %>%
   filter(str_detect(full, '.sp.$', negate = T)) %>% 
   pull(full) 
 
-abbreviationTable(plsl, LegcolN = 8, ntwrks_page = 9, colN = 3)
+tableLegend(plsl, LegcolN = 8, ntwrks_page = 9, colN = 3)
 
 sizeLegend(x = resin, y.space = c(1, 1.35, 1.25, 2.25, 1.95), fill_col = 'black',
            title = 'No. of\nInteractions', colN = 3, ntwrks_page = 9)
 
-category_legend_drawer(node_clrs  = c("#CEAB07", "deeppink2"), LcolN = 1,
-                       legend_items = c("Bombus", "Plant"), ntwrks_page = 9, colN =3)
+categoryLegend(node_clrs  = c("#CEAB07", "deeppink2"), LcolN = 1,
+                       legend_items = c("Bombus", "Plant"), ntwrks_page = 9, colN = 3)
+
+
+
+
+##### GROBS SEEMS ALL FUCKED. I THINK THE APPROACH IS TO CREATE THE THREE LEGEND GROBS SIMULTANEOSULY IN R AND ARRANGE FROM THERE. ALL FUCKED WITH SAVING EXTERNALLY
+
+#' Arrange the legends into a single table grob
+#' 
+#' Combine the three legends into a single table to be placed at the bottom of 
+#' a page of networks. If you have been using default filenames and path this function
+#' can be run without any arguments.
+#' @param directoryIN
+#' @param filenamesIN
+#' @param directoryOUT
+#' @param filenameOUT
+#' @example 
+#' @seealso 'sizeLegend', 'abbreviaitonTable', 'categoryLegend 
+
+grobLegend <- function(directoryIN, filenamesIN, directoryOUT, filenameOUT, ntwrks_page,
+                       colN){
+  
+  if(missing(directoryIN)) {directoryIN <- 'NetworkGraphs' }
+  if(missing(directoryOUT)) {directoryOUT <- 'NetworkGraphs' }
+  if(missing(filenamesIN))
+    {filenamesIN <- c('TableLegend', 'CategoricalLegend', 'SizeLegend')}
+  if(missing(filenameOUT)) {filenameOUT <- 'LegendGrob'}
+  
+  dims <- graph_dims(ntwrks_page, col = colN)
+  
+  filenamesIN <- file.path(directoryIN, paste0(filenamesIN, '.png'))
+  images = lapply(filenamesIN, png::readPNG)
+  grob_images = lapply(images, grid::rasterGrob)
+  
+  layout <- matrix(data = c(1,2,1,3), ncol = 2, byrow = T)
+  gzup <- gridExtra::arrangeGrob(grobs = grob_images, layout_matrix = layout)
+  
+  png(file.path(directoryOUT, paste0(filenameOUT, '.png')),
+      width = 1984, height = dims$H, units = "px", pointsize = 12)
+  print(gzup)
+  invisible(dev.off())
+  
+  message(paste0("'", filenameOUT, 
+                 "' has been rendered as the legend panel and saved to:\n ", 
+                 file.path(directoryOUT, filenameOUT)))
+}
+
+#grobLegend(ntwrks_page = 9, colN = 3)
+
+
+list2env(grob_images, env = environment())
+
+
+dims <- graph_dims(ntwrks_page = 9, col = 3)
+
+filenamesIN <- file.path(directoryIN, paste0(filenamesIN, '.png'))
+images = lapply(filenamesIN, png::readPNG)
+grob_images = lapply(images, grid::rasterGrob)
+
+layout <- matrix(data = c(1,2,1,3), ncol = 2, byrow = T)
+gzup <- gridExtra::arrangeGrob(grobs = grob_images, layout_matrix = grob2)
+
+
+gridExtra::grid.arrange(grob_images[[1]], 
+                        gridExtra::arrangeGrob(grob_images[[2]],
+                                               grob_images[[3]]), ncol = 2,
+                        heights=c(4, 1))
+                  #      layout_matrix = rbind(c(1,1,2), c(1,1,3), c(1,1,3), c(1,1,3)))
+
+
+message(paste0("'", filenameOUT, 
+               "' has been rendered as the legend panel and saved to:\n ", 
+               file.path(directoryOUT, filenameOUT)))
+
+
+r <- sapply(images, dim)
+r
+
+r[2,1] / r[2,2]
+
+?arrangeGrob
+
+grid.arrange(grob_images[[1]], 
+             arrangeGrob(grob_images[[2]], 
+                         grob_images[[3]], 
+                         ncol = 1, heights = c(1,3)),
+             ncol=2, heights = c(1, 1), 
+             widths = c(5, 1))
+
+
+grid.arrange(grob_images[[1]], grob_images[[3]],
+             ncol=2, heights = c(1, 1), 
+             widths = c(5, 1))

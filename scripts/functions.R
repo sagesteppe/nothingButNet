@@ -534,7 +534,7 @@ netPage <- function(directory, col_var, row_var, fname, sep_char, mainT) {
 #' @param directory location to size legend before assembling to final product
 #' @fname a file name for the legend, defaults to legend. 
 #'  
-abbreviationTable <- function(values, LegcolN, colN, ntwrks_page, directory, fname){
+tableLegend <- function(values, LegcolN, colN, ntwrks_page, directory, fname){
   
   if(missing(directory)) { directory <- 'NetworkGraphs' }
   if(missing(fname)) {fname <- 'TableLegend.png'}
@@ -609,7 +609,7 @@ sizeLegend <- function(x, fill_col, y.space, directory, filename, title, ntwrks_
   # prepare the figure 
   er_graph <- igraph::erdos.renyi.game(100, 5/100)
   
-  png(file.path(directory, filename),
+  png(file.path(directory, paste0(filename, '.png')),
       width = (dims$W/2), height = (dims$H * (3/4)), units = "px", pointsize = 12)
   
   plot(er_graph, vertex.label=NA, vertex.color = NA, edge.color = NA, 
@@ -650,7 +650,7 @@ sizeLegend <- function(x, fill_col, y.space, directory, filename, title, ntwrks_
 #' @example category_legend_drawer(node_clrs  
 #' = c("#CEAB07", "deeppink2"), LcolN = 1,
 #'  legend_items = c("Bombus", "Plant"), ntwrks_page = 9, colN =3)
-category_legend_drawer <- function(legend_items, node_clrs, colN, directory, 
+categoryLegend <- function(legend_items, node_clrs, colN, directory, 
                                    filename, ntwrks_page, LcolN){
   
   if(missing(colN)) {colN <- 1}
@@ -662,7 +662,7 @@ category_legend_drawer <- function(legend_items, node_clrs, colN, directory,
   
   er_graph <- igraph::erdos.renyi.game(100, 5/100) 
   
-  png(file.path(directory, filename),
+  png(file.path(directory, paste0(filename, '.png')),
       width = (dims$W/2), height = (dims$H/4), units = "px", pointsize = 12)
   
   plot(er_graph, vertex.label=NA, vertex.color = NA, edge.color = NA, 
