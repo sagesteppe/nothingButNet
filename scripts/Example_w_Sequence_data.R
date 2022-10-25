@@ -124,6 +124,10 @@ categoryLegend(node_clrs  = c("#CEAB07", "deeppink2"), LcolN = 1,
 
 ##### GROBS SEEMS ALL FUCKED. I THINK THE APPROACH IS TO CREATE THE THREE LEGEND GROBS SIMULTANEOSULY IN R AND ARRANGE FROM THERE. ALL FUCKED WITH SAVING EXTERNALLY
 
+
+
+
+
 #' Arrange the legends into a single table grob
 #' 
 #' Combine the three legends into a single table to be placed at the bottom of 
@@ -136,8 +140,7 @@ categoryLegend(node_clrs  = c("#CEAB07", "deeppink2"), LcolN = 1,
 #' @example 
 #' @seealso 'sizeLegend', 'abbreviaitonTable', 'categoryLegend 
 
-grobLegend <- function(directoryIN, filenamesIN, directoryOUT, filenameOUT, ntwrks_page,
-                       colN){
+grobLegend <- function(directoryIN, filenamesIN, directoryOUT, filenameOUT, ntwrks_page,colN){
   
   if(missing(directoryIN)) {directoryIN <- 'NetworkGraphs' }
   if(missing(directoryOUT)) {directoryOUT <- 'NetworkGraphs' }
@@ -164,40 +167,6 @@ grobLegend <- function(directoryIN, filenamesIN, directoryOUT, filenameOUT, ntwr
                  file.path(directoryOUT, filenameOUT)))
 }
 
-#grobLegend(ntwrks_page = 9, colN = 3)
-
-
-list2env(grob_images, env = environment())
-
-
-dims <- graph_dims(ntwrks_page = 9, col = 3)
-
-filenamesIN <- file.path(directoryIN, paste0(filenamesIN, '.png'))
-images = lapply(filenamesIN, png::readPNG)
-grob_images = lapply(images, grid::rasterGrob)
-
-layout <- matrix(data = c(1,2,1,3), ncol = 2, byrow = T)
-gzup <- gridExtra::arrangeGrob(grobs = grob_images, layout_matrix = grob2)
-
-
-gridExtra::grid.arrange(grob_images[[1]], 
-                        gridExtra::arrangeGrob(grob_images[[2]],
-                                               grob_images[[3]]), ncol = 2,
-                        heights=c(4, 1))
-                  #      layout_matrix = rbind(c(1,1,2), c(1,1,3), c(1,1,3), c(1,1,3)))
-
-
-message(paste0("'", filenameOUT, 
-               "' has been rendered as the legend panel and saved to:\n ", 
-               file.path(directoryOUT, filenameOUT)))
-
-
-r <- sapply(images, dim)
-r
-
-r[2,1] / r[2,2]
-
-?arrangeGrob
 
 grid.arrange(grob_images[[1]], 
              arrangeGrob(grob_images[[2]], 
@@ -210,3 +179,136 @@ grid.arrange(grob_images[[1]],
 grid.arrange(grob_images[[1]], grob_images[[3]],
              ncol=2, heights = c(1, 1), 
              widths = c(5, 1))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+tableLegend <- function(x, table_items, directory, fname, colors, legend_items, node_clrs,
+                        ntwrks_page, colN, LcolN, fill_col, y.space, values, LegcolN, title){
+  
+  if(missing(directory)) { directory <- 'NetworkGraphs' }
+  if(missing(fname)) {fname <- 'TableLegend.png'}
+  if(missing(fill_col)){fill_col <- 'white'}
+  if(missing(y.space)){y.space <- seq(from = 1, to = 2, length.out = 5)}
+  
+  dims <- graph_dims(ntwrks_page, col = colN)
+  
+  # create the categorical legend.
+  er_graph <- igraph::erdos.renyi.game(100, 5/100) 
+  catLeg <- plot(er_graph, vertex.label=NA, vertex.color = NA, edge.color = NA, 
+                 vertex.frame.color = NA) 
+  legend('center', legend_items, 
+           pch = 21, col="#777777", 
+           pt.bg = node_clrs, bty = "n", 
+           pt.cex = 4, cex = 2,  ncol = LcolN)
+  
+  dev.off()
+  
+  #  create the legend table. 
+  lname <- file.path(directory, fname)
+  grp <- ceiling(length(values)/LegcolN)
+  l <- (grp * LegcolN) - length(values)
+  
+  values <- c(values, rep("", l))
+  v <- matrix(data = values , nrow = grp, ncol = LegcolN)
+  tt2 <- gridExtra::ttheme_minimal(core=list(fg_params=list(hjust=0, x=0.1)),
+                                   rowhead=list(fg_params=list(hjust=0, x=0)))
+  
+  table_grob <- gridExtra::tableGrob(v, theme = tt2)
+  
+  # Create the bubble size legend
+  net <- lapply(x, igraph::graph_from_incidence_matrix, weight = T)
+  deg <- lapply(net, igraph::centr_degree,  mode = "all")
+  
+  vals <- vector(mode = 'list', length = length(deg))
+  for (i in 1:length(deg)){
+    vals[[i]] <- deg[[i]][['res']]
+  }
+  
+  interaction_no <- Reduce(c,vals)
+  breaks <- (max(interaction_no) - min(interaction_no)) / 4
+  Intervals <- c(min(interaction_no), round(breaks * 1),
+                 round(breaks * 2), round(breaks * 3), max(interaction_no)
+  )
+  vals_size <- 2.5 * sqrt(Intervals)
+  size_legend <- data.frame('Interactions' = Intervals,  'Area' = vals_size)
+  
+  # prepare the figure 
+  Size <- plot(er_graph, vertex.label=NA, vertex.color = NA, edge.color = NA, 
+               vertex.frame.color = NA) # empty dummy plot
+  legend('center', legend = size_legend$Interactions, 
+              pt.cex = size_legend$Area/100, bty = 'n', 
+              y.intersp = y.space, cex = 2,
+              col='white', pch=21, pt.bg='white', title = title)
+  a <- legend('center', legend = size_legend$Interactions, 
+                        pt.cex = size_legend$Interactions, col='black', bty = 'n', 
+                        y.intersp = y.space, title = title, cex = 2,
+  )
+  Size_grob <- Size + symbols(a$text$x + a$rect$left, a$text$y, 
+                                   circles = size_legend$Area/100, 
+          inches = FALSE, add = TRUE, bg = fill_col)
+  
+  # assemble the super legend. 
+  
+  #legend_grob <- gridExtra::grid.arrange(table_grob, catLeg, Size_grob,
+  #             ncol = 2, heights = c(1, 1), LcolN = 1, 
+  #             widths = c(5, 1))
+  
+  #png(lname,
+  #    width = 1984, height = dims$H, units = "px", pointsize = 12)
+  
+  #invisible(dev.off())
+  
+  message(paste0("'", fname, 
+                 "' has been rendered as a legend and saved to:\n ",
+                 file.path(directory, fname)))
+  
+  return(catLeg)
+}
+
+
+p <- tableLegend(x = resin, node_clrs = c("#CEAB07", "deeppink2"), ntwrks_page = 9,
+            colN = 3, LcolN =1,
+             legend_items = c("Bombus", "Plant"), table_items = arranged_plants,
+            values = arranged_plants, LegcolN = 6, title = 'bill walton')
+
+plot(p)
