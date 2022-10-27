@@ -90,7 +90,7 @@ resin <- bee_obs_wk %>%  # if sp. we need to leave genus spelt out, if epithet p
   map(., arrange_nets, col_arrange = arranged_plants, # now use the ARRANGE NET fun
         row_arrange = arranged_bees) # to remove empty plants
 
-list2env(resin,env = environment())
+# list2env(resin,env = environment())
 
 
 graphDrawer(Kraken.Late, lbl_fnt = 14,
@@ -102,6 +102,7 @@ graphDrawer(Kraken.Late, lbl_fnt = 14,
             col = 3
 )
 
+rm(seqs, bee_obs_wk, plants_legend)
 
 netPage(col_var = c('Kraken', 'Bracken', 'BLAST'), mainT = 'Comparision of Foraging
              Patterns from Three Sequence Alignment Algorithms',
@@ -233,15 +234,15 @@ tableLegend <- function(x, table_items, directory, fname, colors, legend_items, 
   dims <- graph_dims(ntwrks_page, col = colN)
   
   # create the categorical legend.
-  er_graph <- igraph::erdos.renyi.game(100, 5/100) 
-  catLeg <- plot(er_graph, vertex.label=NA, vertex.color = NA, edge.color = NA, 
-                 vertex.frame.color = NA) 
+ # er_graph <- igraph::erdos.renyi.game(100, 5/100) 
+  plot(NULL ,xaxt='n',yaxt='n',bty='n',ylab='',xlab='', xlim=0:1, ylim=0:1)
   legend('center', legend_items, 
            pch = 21, col="#777777", 
            pt.bg = node_clrs, bty = "n", 
            pt.cex = 4, cex = 2,  ncol = LcolN)
   
-  dev.off()
+  catLeg = recordPlot() 
+  catLeg  <- cowplot::as_grob(catLeg)
   
   #  create the legend table. 
   lname <- file.path(directory, fname)
@@ -273,7 +274,7 @@ tableLegend <- function(x, table_items, directory, fname, colors, legend_items, 
   size_legend <- data.frame('Interactions' = Intervals,  'Area' = vals_size)
   
   # prepare the figure 
-  Size <- plot(er_graph, vertex.label=NA, vertex.color = NA, edge.color = NA, 
+  plot(er_graph, vertex.label=NA, vertex.color = NA, edge.color = NA, 
                vertex.frame.color = NA) # empty dummy plot
   legend('center', legend = size_legend$Interactions, 
               pt.cex = size_legend$Area/100, bty = 'n', 
@@ -283,32 +284,73 @@ tableLegend <- function(x, table_items, directory, fname, colors, legend_items, 
                         pt.cex = size_legend$Interactions, col='black', bty = 'n', 
                         y.intersp = y.space, title = title, cex = 2,
   )
-  Size_grob <- Size + symbols(a$text$x + a$rect$left, a$text$y, 
-                                   circles = size_legend$Area/100, 
+  symbols(a$text$x + a$rect$left, a$text$y, circles = size_legend$Area/100, 
           inches = FALSE, add = TRUE, bg = fill_col)
   
-  # assemble the super legend. 
+  Size_grob <- recordPlot()
+  plot.new()
+  Size_grob <- cowplot::as_grob(Size_grob)
   
-  #legend_grob <- gridExtra::grid.arrange(table_grob, catLeg, Size_grob,
-  #             ncol = 2, heights = c(1, 1), LcolN = 1, 
-  #             widths = c(5, 1))
+   #assemble the super legend. 
   
-  #png(lname,
-  #    width = 1984, height = dims$H, units = "px", pointsize = 12)
+#  legend_grob <- gridExtra::grid.arrange(table_grob, catLeg, Size_grob,
+#               ncol = 2, heights = c(1, 1), LcolN = 1, 
+#               widths = c(5, 1))
+#  png(lname,
+#      width = 1984, height = dims$H, units = "px", pointsize = 12)
+#  legend_grob
+#  invisible(dev.off())
   
-  #invisible(dev.off())
-  
-  message(paste0("'", fname, 
-                 "' has been rendered as a legend and saved to:\n ",
-                 file.path(directory, fname)))
+#  message(paste0("'", fname, 
+#                 "' has been rendered as a legend and saved to:\n ",
+#                 file.path(directory, fname)))
   
   return(catLeg)
 }
 
 
 p <- tableLegend(x = resin, node_clrs = c("#CEAB07", "deeppink2"), ntwrks_page = 9,
-            colN = 3, LcolN =1,
-             legend_items = c("Bombus", "Plant"), table_items = arranged_plants,
-            values = arranged_plants, LegcolN = 6, title = 'bill walton')
+            colN = 3, LcolN = 1, legend_items = c("Bombus", "Plant"), 
+            table_items = arranged_plants, values = arranged_plants, fill_col = 'black',
+            LegcolN = 6, title = 'bill walton', y.space = c(1, 1.35, 1.25, 2.25, 1.95))
 
-plot(p)
+grid::grid.draw(p)
+
+
+# Create the bubble size legend
+net <- lapply(resin, igraph::graph_from_incidence_matrix, weight = T)
+deg <- lapply(net, igraph::centr_degree,  mode = "all")
+
+vals <- vector(mode = 'list', length = length(deg))
+for (i in 1:length(deg)){
+  vals[[i]] <- deg[[i]][['res']]
+}
+
+interaction_no <- Reduce(c, vals)
+breaks <- (max(interaction_no) - min(interaction_no)) / 4
+Intervals <- c(min(interaction_no), round(breaks * 1),
+               round(breaks * 2), round(breaks * 3), max(interaction_no)
+)
+vals_size <- 2.5 * sqrt(Intervals)
+size_legend <- data.frame('Interactions' = Intervals,  'Area' = vals_size)
+
+
+
+plot(NULL ,xaxt='n',yaxt='n',bty='n',ylab='',xlab='', xlim=0:1, ylim=0:1)
+legend('center', legend = size_legend$Interactions, 
+       pt.cex = size_legend$Area/100, bty = 'n', 
+       y.intersp = y.space, cex = 2,
+       col='white', pch=21, pt.bg='white', title = title)
+
+a <- legend('center', legend = size_legend$Interactions, 
+            pt.cex = size_legend$Interactions, col='black', bty = 'n', 
+            y.intersp = y.space, title = title, cex = 2,
+)
+
+symbols(a$text$x + a$rect$left, a$text$y, circles = size_legend$Area/100, 
+        inches = FALSE, add = TRUE, bg = fill_col)
+
+Size_grob <- recordPlot()
+plot.new()
+Size_grob <- cowplot::as_grob(Size_grob)
+grid::grid.draw(Size_grob)
