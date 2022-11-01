@@ -513,7 +513,8 @@ netPage <- function(directory, col_var, row_var, fname, sep_char, mainT) {
   g2p <- g2p[ord2grab]
   
   # place on the page and print.
-  ml <- gridExtra::marrangeGrob(grobs = g2p, layout_matrix = layout, top = '')
+  ml <- gridExtra::marrangeGrob(grobs = g2p, 
+                                layout_matrix = layout, top = '')
   pdf(file = file.path(directory, fname), paper = 'a4')
   print(ml)
   invisible(dev.off())
@@ -524,26 +525,18 @@ netPage <- function(directory, col_var, row_var, fname, sep_char, mainT) {
 
 }
 
-
-#' Creates a simple abbreviation legend for graphs
+#' Draw three legends for the plots and save to png
 #' 
-#' @param values a vector of names 
-#' @param LegcolN number of columns to spread legend across
-#' @param colN number of columns that nets will be split across
-#' @ntwrks_page the number of networks you plan to place on the page
-#' @param directory location to size legend before assembling to final product
-#' @fname a file name for the legend, defaults to legend. 
-
-#' Draw a node color legend grob 
-#' 
-#' This quickly draws a grob to be assembled onto the 'legend' section of a page
-#' it is quite minimal and does not currently offer much flexibility.
-#' 
+#' This quickly draws three different legends. One is a table to show the 
+#' abbreviations which are used in the nets. One legend shows the two major
+#' categorical colors which are used in the nets. The final legend is a size legend, 
+#' which is not to scale, but numerically shows the range in the number of 
+#' interacting species. 
 #' 
 #' @param x a list of matrices to render graphs of (output of 'arrange_nets')
-#' @param table_items
+#' @param table_items vector of names for legend portion of the table
 #' @param directory location to size legend before assembling to final product
-#' @param values a vector of names 
+#' @param fname a file name for the legend, defaults to legend. 
 #' @param legend_items character vector with names of node items
 #' @param node_clrs character vector with node item colors
 #' @param fill_col a character vector of fill colors for the size bubbles
@@ -557,8 +550,8 @@ netPage <- function(directory, col_var, row_var, fname, sep_char, mainT) {
 #' @example category_legend_drawer(node_clrs  
 #' = c("#CEAB07", "deeppink2"), LcolN = 1,
 #'  legend_items = c("Bombus", "Plant"), ntwrks_page = 9, colN =3)
-tableLegend2 <- function(x, table_items, directory, fname, colors, legend_items, node_clrs,
-                         ntwrks_page, fill_col, y.space, values, colN, LcolN, LegcolN){
+tableLegend2 <- function(x, table_items, directory, fname, legend_items, node_clrs,
+                         fill_col, y.space, ntwrks_page, colN, LcolN, LegcolN){
   
   if(missing(directory)) { directory <- 'NetworkGraphs' }
   if(missing(fname)) {fname <- 'TableLegend.png'}
@@ -657,3 +650,5 @@ tableLegend2 <- function(x, table_items, directory, fname, colors, legend_items,
                  "' has been rendered as a legend and saved to:\n ",
                  file.path(directory, fname)))
 }
+
+
