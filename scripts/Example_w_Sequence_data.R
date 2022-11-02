@@ -188,7 +188,8 @@ netPage2 <- function(directory, col_var, row_var, fname, sep_char, mainT, Tlegen
                     bottom = col_var[2:(length(col_var))],
                     padding = unit(0.0, "line"))
   
-  list2env(bottoms,env = environment())
+  list2env(bottoms, env = environment())
+  
   
   # ensure the grobs are in the correct order for the mosaic. 
   g2p <- mget(ls(pattern = '[t|b][1-9]{1}'))
@@ -197,26 +198,39 @@ netPage2 <- function(directory, col_var, row_var, fname, sep_char, mainT, Tlegen
   g2p <- g2p[ord2grab]
   
   # load and place the legend onto the grobs2plot
-  legend <- ggplotify::as.grob(grid::rasterGrob(png::readPNG(file.path(directory, Tlegend_fname))))
-  g2p <- append(g2p, legend)
+  legend <- grid::rasterGrob(png::readPNG(file.path(directory, Tlegend_fname)))
+  legend <- gridExtra::arrangeGrob(legend, nrow = 1)
+  g2p <- c(g2p, leg = list(legend)) 
+  
   
   # place on the page and print.
-#  ml <- gridExtra::marrangeGrob(grobs = g2p, 
-#                                layout_matrix = layout, top = '')
-#  pdf(file = file.path(directory, fname), paper = 'a4')
-#  print(ml)
-#  invisible(dev.off())
+  ml <- gridExtra::marrangeGrob(grobs = g2p, 
+                                layout_matrix = layout, top = '')
+  pdf(file = file.path(directory, fname), paper = 'a4')
+  print(ml)
+  invisible(dev.off())
   
   message(paste0("'", fname, 
                  "' has been rendered as a pdf and saved to:\n ",
                  file.path(directory, fname)))
- return(legend) 
+ return(g2p) 
 }
 
-netPage2(col_var = c('Kraken', 'Bracken', 'BLAST'), mainT = 'Comparision of Foraging
-             Patterns from Three Sequence Alignment Algorithms',
+legend <- netPage2(col_var = c('Kraken', 'Bracken', 'BLAST'), mainT = 'Comparision of Foraging Patterns from Three Sequence Alignment Algorithms',
         row_var = c('Early', 'Mid', 'Late'), sep = '.')
 
 
+str(a)
+str(b)
 
 
+t <- grid::textGrob(".")
+g <- list(t, legend, t)
+
+r1 <- c(1, rep(2, times = 8), 3)
+t <- matrix( data = rep(r1, times = 10), nrow = 10, byrow = T)
+
+
+a <- gridExtra::arrangeGrob(legend, nrow = 1)
+
+grid::grid.draw(legend)
