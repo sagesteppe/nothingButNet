@@ -107,130 +107,20 @@ netPage(col_var = c('Kraken', 'Bracken', 'BLAST'), mainT = 'Comparision of Forag
              Patterns from Three Sequence Alignment Algorithms',
               row_var = c('Early', 'Mid', 'Late'), sep = '.')
 
+arranged_plants
+
 plsl <- plants_legend %>% 
   filter(str_detect(full, '.sp.$', negate = T)) %>% 
-  pull(full) 
+  mutate(full = str_pad(full, (max(str_length(full)) + 1), "right"),
+         full = str_replace(full, "\\.", " ")) %>% 
+  pull(full)
 
-tableLegend(plsl, LegcolN = 8, ntwrks_page = 9, colN = 3)
-
-sizeLegend(x = resin, y.space = c(1, 1.35, 1.25, 2.25, 1.95), fill_col = 'black',
-           title = 'No. of\nInteractions', colN = 3, ntwrks_page = 9)
-
-tableLegend2(x = resin, node_clrs = c("#CEAB07", "deeppink2"), ntwrks_page = 9,
+tableLegend(x = resin, node_clrs = c("#CEAB07", "deeppink2"), ntwrks_page = 9,
                  colN = 3, LcolN = 1, legend_items = c("Bombus", "Plant"), 
-                 table_items = arranged_plants, fill_col = 'black',
-                 LegcolN = 8, title = 'bill walton', y.space = c(1, 1.35, 1.25, 2.25, 1.95))
+                 table_items = plsl, fill_col = 'black',
+                 LegcolN = 5, y.space = c(1, 1.35, 1.25, 2.25, 1.95))
 
-
-netPage2 <- function(directory, col_var, row_var, fname, sep_char, mainT, Tlegend_fname) {
-  
-  if(missing(directory)) { directory <- 'NetworkGraphs' }
-  if(missing(fname)) {fname <- 'mosaiced_Nets.pdf'}
-  if(missing(sep_char))  {sep_char <- ''}
-  if(missing(mainT))  {mainT <- 'Bill walton thinks u forgot a title'}
-  if(missing(Tlegend_fname)) {Tlegend_fname <- 'TableLegend.png'}
-  
-  rowOrder <- matrix( # this sets up a matrix to have rows groups in order
-    data = rep(row_var, each = length(col_var)),
-    ncol = length(col_var), byrow = T)
-  colOrder <- matrix( # this sets up a matrix to have column groups in order
-    data = rep(col_var, each = length(col_var)),
-    ncol = length(col_var), byrow = F)
-  image_orders <- matrix(paste0(colOrder, sep_char, rowOrder, '.png'), 
-                         ncol = length(col_var))
-  image_orders <- as.vector(t(image_orders)) 
-  image_orders <- file.path(directory, image_orders)  
-  images = lapply(image_orders, png::readPNG)
-  grob_images = lapply(images, grid::rasterGrob)
-  
-  nPlots <- (length(col_var) * length(row_var))
-  colN <- length(col_var)
-  rowN <- nPlots / length(col_var)
-  
-  # define the layout
-  layout <- matrix(nrow = rowN, ncol = colN, byrow = T,
-                   data = c(rep(1:(rowN -1), each = colN),
-                            rowN:((rowN-1) + colN) )
-  )
-  layout <- rbind(layout, rep((max(layout) + 1), nrow(layout)))
-  
-  # Recover the top grobs!!
-  top_grobs <- split(grob_images[1:(length(grob_images) - rowN)],
-                     ceiling(seq_along(grob_images[1:(length(grob_images) -
-                                                        rowN)]) / rowN))
-  names(top_grobs) <- paste0('t', seq(1:length(top_grobs)))
-  
-  # title up the real top grob
-  t1 <- gridExtra::arrangeGrob(grobs = top_grobs$t1, ncol = colN, 
-                               padding = unit(0.0, "line"),
-                               left = row_var[1], top = mainT)
-  
-  # this will get all of the subsequent top grobs !!!!!!!!
-  top_grobs <- mapply(gridExtra::arrangeGrob, 
-                      grobs = top_grobs[2:length(top_grobs)], ncol = colN, 
-                      left = row_var[2:(length(row_var)-1)], 
-                      padding = unit(0.0, "line"))
-  
-  list2env(top_grobs,env = environment())
-  
-  # this recovers the bottom grobs
-  L <- length(grob_images)
-  range <- ((L - rowN) + 1 ): L
-  bottom_grobs <- split(grob_images[((L - rowN) + 1 ): L],
-                        seq_along(range) / 1)
-  names(bottom_grobs) <- paste0('b', seq(1:length(bottom_grobs)))
-  
-  b1 <- gridExtra::arrangeGrob(grobs = bottom_grobs$b1, bottom = col_var[1],
-                               left = row_var[length(row_var)],
-                               padding = unit(0.0, "line"))
-  bottoms <- mapply(gridExtra::arrangeGrob, 
-                    grobs = bottom_grobs[2:length(bottom_grobs)],
-                    bottom = col_var[2:(length(col_var))],
-                    padding = unit(0.0, "line"))
-  
-  list2env(bottoms, env = environment())
-  
-  
-  # ensure the grobs are in the correct order for the mosaic. 
-  g2p <- mget(ls(pattern = '[t|b][1-9]{1}'))
-  groborder <- c(paste0('t', seq(1:9)), paste0('b', seq(1:9)))
-  ord2grab <- match(groborder, names(g2p)) |> na.omit()
-  g2p <- g2p[ord2grab]
-  
-  # load and place the legend onto the grobs2plot
-  legend <- grid::rasterGrob(png::readPNG(file.path(directory, Tlegend_fname)))
-  legend <- gridExtra::arrangeGrob(legend, nrow = 1)
-  g2p <- c(g2p, leg = list(legend)) 
-  
-  
-  # place on the page and print.
-  ml <- gridExtra::marrangeGrob(grobs = g2p, 
-                                layout_matrix = layout, top = '')
-  pdf(file = file.path(directory, fname), paper = 'a4')
-  print(ml)
-  invisible(dev.off())
-  
-  message(paste0("'", fname, 
-                 "' has been rendered as a pdf and saved to:\n ",
-                 file.path(directory, fname)))
- return(g2p) 
-}
-
-legend <- netPage2(col_var = c('Kraken', 'Bracken', 'BLAST'), mainT = 'Comparision of Foraging Patterns from Three Sequence Alignment Algorithms',
+netPage2(col_var = c('Kraken', 'Bracken', 'BLAST'), 
+         mainT = 'Comparision of Foraging Patterns from Three Sequence Alignment Algorithms',
         row_var = c('Early', 'Mid', 'Late'), sep = '.')
 
-
-str(a)
-str(b)
-
-
-t <- grid::textGrob(".")
-g <- list(t, legend, t)
-
-r1 <- c(1, rep(2, times = 8), 3)
-t <- matrix( data = rep(r1, times = 10), nrow = 10, byrow = T)
-
-
-a <- gridExtra::arrangeGrob(legend, nrow = 1)
-
-grid::grid.draw(legend)

@@ -438,13 +438,14 @@ netPage <- function(directory, col_var, row_var, fname, sep_char) {
 #' netPage(col_var = c('observation', 'microscopy', 'molecular'), 
 #"        row_var = c('early', 'mid', 'late'))
 #' @return a cowplot arranged grid.
-
-netPage <- function(directory, col_var, row_var, fname, sep_char, mainT) {
+#' @export
+netPage2 <- function(directory, col_var, row_var, fname, sep_char, mainT, Tlegend_fname) {
   
   if(missing(directory)) { directory <- 'NetworkGraphs' }
   if(missing(fname)) {fname <- 'mosaiced_Nets.pdf'}
   if(missing(sep_char))  {sep_char <- ''}
   if(missing(mainT))  {mainT <- 'Bill walton thinks u forgot a title'}
+  if(missing(Tlegend_fname)) {Tlegend_fname <- 'TableLegend.png'}
   
   rowOrder <- matrix( # this sets up a matrix to have rows groups in order
     data = rep(row_var, each = length(col_var)),
@@ -455,8 +456,7 @@ netPage <- function(directory, col_var, row_var, fname, sep_char, mainT) {
   image_orders <- matrix(paste0(colOrder, sep_char, rowOrder, '.png'), 
                          ncol = length(col_var))
   image_orders <- as.vector(t(image_orders)) 
-  image_orders <- file.path(directory, image_orders)
-  
+  image_orders <- file.path(directory, image_orders)  
   images = lapply(image_orders, png::readPNG)
   grob_images = lapply(images, grid::rasterGrob)
   
@@ -469,6 +469,7 @@ netPage <- function(directory, col_var, row_var, fname, sep_char, mainT) {
                    data = c(rep(1:(rowN -1), each = colN),
                             rowN:((rowN-1) + colN) )
   )
+  layout <- rbind(layout, rep((max(layout) + 1), nrow(layout)))
   
   # Recover the top grobs!!
   top_grobs <- split(grob_images[1:(length(grob_images) - rowN)],
@@ -504,13 +505,20 @@ netPage <- function(directory, col_var, row_var, fname, sep_char, mainT) {
                     bottom = col_var[2:(length(col_var))],
                     padding = unit(0.0, "line"))
   
-  list2env(bottoms,env = environment())
+  list2env(bottoms, env = environment())
+  
   
   # ensure the grobs are in the correct order for the mosaic. 
   g2p <- mget(ls(pattern = '[t|b][1-9]{1}'))
   groborder <- c(paste0('t', seq(1:9)), paste0('b', seq(1:9)))
   ord2grab <- match(groborder, names(g2p)) |> na.omit()
   g2p <- g2p[ord2grab]
+  
+  # load and place the legend onto the grobs2plot
+  legend <- grid::rasterGrob(png::readPNG(file.path(directory, Tlegend_fname)))
+  legend <- gridExtra::arrangeGrob(legend, nrow = 1)
+  g2p <- c(g2p, leg = list(legend)) 
+  
   
   # place on the page and print.
   ml <- gridExtra::marrangeGrob(grobs = g2p, 
@@ -522,7 +530,6 @@ netPage <- function(directory, col_var, row_var, fname, sep_char, mainT) {
   message(paste0("'", fname, 
                  "' has been rendered as a pdf and saved to:\n ",
                  file.path(directory, fname)))
-
 }
 
 #' Draw three legends for the plots and save to png
@@ -550,7 +557,8 @@ netPage <- function(directory, col_var, row_var, fname, sep_char, mainT) {
 #' @example category_legend_drawer(node_clrs  
 #' = c("#CEAB07", "deeppink2"), LcolN = 1,
 #'  legend_items = c("Bombus", "Plant"), ntwrks_page = 9, colN =3)
-tableLegend2 <- function(x, table_items, directory, fname, legend_items, node_clrs,
+#' @export
+tableLegend <- function(x, table_items, directory, fname, legend_items, node_clrs,
                          fill_col, y.space, ntwrks_page, colN, LcolN, LegcolN){
   
   if(missing(directory)) { directory <- 'NetworkGraphs' }
@@ -568,32 +576,31 @@ tableLegend2 <- function(x, table_items, directory, fname, legend_items, node_cl
   v <- c("#CEAB07", "deeppink2")
   names(v) <- c('Bombus', 'Plant')
   
-  p <- ggplot2::ggplot(d, 
-                       ggplot2::aes(x= Dummy, y=Dummy2, color = Group)) + 
+  p <- ggplot2::ggplot(d, ggplot2::aes(x= Dummy, y=Dummy2, color = Group)) + 
     ggplot2::geom_point() +
-    ggplot2::guides(color = ggplot2::guide_legend(override.aes = list(size=10))) +
-    ggplot2::scale_fill_manual(v) +
+    ggplot2::guides(color = ggplot2::guide_legend(override.aes = list(size=12))) + 
+    ggplot2::scale_color_manual(values = v) + 
     ggplot2::labs(color = 'Major Interacting\nGroups ') +
     ggplot2::theme(legend.key = ggplot2::element_rect(fill = "white"),
                    legend.title.align = 0.5,
-                   legend.key.size = unit(1.5, 'cm'), 
+                   legend.key.size = unit(2.5, 'cm'), 
                    legend.key.height = unit(3, 'cm'), 
-                   legend.key.width = unit(2, 'cm'), 
-                   legend.title = ggplot2::element_text(size=16),
-                   legend.text = ggplot2::element_text(size=14)) 
+                   legend.key.width = unit(3, 'cm'), 
+                   legend.title = ggplot2::element_text(size = 24),
+                   legend.text = ggplot2::element_text(size = 20)) 
   
   catLeg <- cowplot::get_legend(p)
   
   #  create the legend table. 
   lname <- file.path(directory, fname)
-  grp <- ceiling(length(values)/LegcolN)
-  l <- (grp * LegcolN) - length(values)
+  grp <- ceiling(length(table_items)/LegcolN)
+  l <- (grp * LegcolN) - length(table_items)
   
-  values <- c(values, rep("", l))
-  v <- matrix(data = values , nrow = grp, ncol = LegcolN)
+  table_items <- c(table_items, rep("", l))
+  v <- matrix(data = table_items , nrow = grp, ncol = LegcolN)
   tt2 <- gridExtra::ttheme_minimal(core=list(fg_params=list(hjust=0, x=0.1)),
                                    rowhead=list(fg_params=list(hjust=0, x=0)),
-                                   base_size = 12)
+                                   base_size = 20)
   
   tableLeg <- gridExtra::tableGrob(v, theme = tt2)
   
@@ -623,8 +630,8 @@ tableLegend2 <- function(x, table_items, directory, fname, legend_items, node_cl
                    legend.key.size = unit(1, 'cm'), 
                    legend.key.height = unit(2, 'cm'), 
                    legend.key.width = unit(2, 'cm'), 
-                   legend.title = ggplot2::element_text(size=16),
-                   legend.text = ggplot2::element_text(size=14)) +
+                   legend.title = ggplot2::element_text(size = 24),
+                   legend.text = ggplot2::element_text(size = 20)) +
     ggplot2::labs(size = 'No. of Interacting\nspecies')
   
   sizeLeg <- cowplot::get_legend(p)
@@ -633,11 +640,16 @@ tableLegend2 <- function(x, table_items, directory, fname, legend_items, node_cl
   grobBY <- list(tableLeg, sizeLeg, catLeg)
   
   lays <- rbind(
+    c(NA,NA,NA,NA,NA,NA),
+    c(1,1,1,1,1, 2),
+    c(1,1,1,1,1, 2),
     c(1,1,1,1,1, 2),
     c(1,1,1,1,1, 2),
     c(1,1,1,1,1, 2),
     c(1,1,1,1,1, 3),
+    c(1,1,1,1,1, 3),
     c(1,1,1,1,1, 3)
+    c(NA,NA,NA,NA,NA,NA),
   )
   
   bucket <- gridExtra::grid.arrange(grobs = grobBY, layout_matrix = lays)
