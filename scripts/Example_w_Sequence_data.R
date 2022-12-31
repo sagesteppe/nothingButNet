@@ -3,9 +3,11 @@ library(tidyverse)
 library(igraph)
 #set_here('~/Documents/floral_observations')  # move this to be the root of the project folder on your box
 # i_am('~/Documents/floral_observations')
-setwd('~/Documents/nothingButNet/data/raw')
-p2d <- file.path('~/Documents/nothingButNet/data/raw')
+setwd('~/Documents/nothingButNet')
+p2d <- file.path('data/raw')
 files <- list.files(p2d, pattern = 'csv')
+
+source('scripts/functions.R')
 
 
 # BLAST IS MISSING SAMPLES!!!!!!!!!!!! LIKE 3- 12 ????!??!?!?!??!?!?!?!?
@@ -60,7 +62,6 @@ arranged_bees <- c('bifarius', 'mixtus', 'rufocinctus', 'sylvicola',
                    'appositus', 'californicus', 'nevadensis', 
                    'unknown') 
 
-
 bee_obs_wk <- seqs %>% 
   group_by(bombus.species, Taxon, period, Method) %>% 
   mutate(Interactions_total  = sum(n)) %>% 
@@ -90,10 +91,10 @@ resin <- bee_obs_wk %>%  # if sp. we need to leave genus spelt out, if epithet p
   map(., arrange_nets, col_arrange = arranged_plants, # now use the ARRANGE NET fun
         row_arrange = arranged_bees) # to remove empty plants
 
-# list2env(resin,env = environment())
+list2env(resin,env = environment())
 
-graphDrawer(Kraken.Late, lbl_fnt = 14,
-            plot_name = 'Kraken.Mid',
+graphDrawer(Kraken.Late,
+            plot_name = 'Kraken.Late',
             edge_clr = 'lightseagreen',
             node_clrs  = c("#CEAB07", "deeppink2"),
             legend_items = c("Bombus", "Plant"),
@@ -101,13 +102,7 @@ graphDrawer(Kraken.Late, lbl_fnt = 14,
             col = 3
 )
 
-rm(seqs, bee_obs_wk, plants_legend)
-
-netPage(col_var = c('Kraken', 'Bracken', 'BLAST'), mainT = 'Comparision of Foraging
-             Patterns from Three Sequence Alignment Algorithms',
-              row_var = c('Early', 'Mid', 'Late'), sep = '.')
-
-arranged_plants
+rm(seqs, bee_obs_wk)
 
 plsl <- plants_legend %>% 
   filter(str_detect(full, '.sp.$', negate = T)) %>% 
@@ -122,5 +117,5 @@ tableLegend(x = resin, node_clrs = c("#CEAB07", "deeppink2"), ntwrks_page = 9,
 
 netPage2(col_var = c('Kraken', 'Bracken', 'BLAST'), 
          mainT = 'Comparision of Foraging Patterns from Three Sequence Alignment Algorithms',
-        row_var = c('Early', 'Mid', 'Late'), sep = '.')
-
+         row_var = c('Early', 'Mid', 'Late'), sep = '.')
+arranged_plants
