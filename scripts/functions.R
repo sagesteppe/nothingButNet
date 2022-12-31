@@ -263,7 +263,7 @@ graphDrawer <- function(data, plot_name, edge_clr, node_clrs,  bg_clr,
                         ntwrks_page, col, H, W){
   
   if(missing(plot_name)) { plot_name <- substitute(data) }
-  if(missing(lbl_fnt)) { lbl_fnt <- 10 }
+  if(missing(lbl_fnt)) { lbl_fnt <- 14 }
   if(missing(directory)) { directory <- 'NetworkGraphs' }
   if(missing(fname)) { fname <- paste0(substitute(data), '.png')}
   
@@ -308,7 +308,7 @@ graphDrawer <- function(data, plot_name, edge_clr, node_clrs,  bg_clr,
   par(mar=c(3,6.5,3,6.5))
   plot(net, layout=template, 
        edge.color = edge_clr,
-       vertex.label.cex = 1.0,
+       vertex.label.cex = 1.2,
        vertex.label = VNames,
        vertex.label.dist= VLPs$dist_vals, 
        vertex.label.degree = VLPs$degree_shift, 
@@ -321,6 +321,143 @@ graphDrawer <- function(data, plot_name, edge_clr, node_clrs,  bg_clr,
                 "' has been rendered as a graph and saved to:\n ", filename))
  
 
+}
+
+
+#' Draw three legends for the plots and save to png
+#' 
+#' This quickly draws three different legends. One is a table to show the 
+#' abbreviations which are used in the nets. One legend shows the two major
+#' categorical colors which are used in the nets. The final legend is a size legend, 
+#' which is not to scale, but numerically shows the range in the number of 
+#' interacting species. 
+#' 
+#' @param x a list of matrices to render graphs of (output of 'arrange_nets')
+#' @param table_title a character, table name
+#' @param table_items vector of names for legend portion of the table
+#' @param directory location to size legend before assembling to final product
+#' @param fname a file name for the legend, defaults to legend. 
+#' @param legend_items character vector with names of node items
+#' @param node_clrs character vector with node item colors
+#' @param fill_col a character vector of fill colors for the size bubbles
+#' @param y.space a numeric vector of 'distances' for the legend elements
+#' @param filename defaults to 'SizeLegend'
+#' @param ntwrks_page the number of networks you plan on placing on each page
+#' @param LcolN number of columns to split legend across
+#' @param LegcolN number of columns in the table
+#' @param colN number of columns for the nets on the page
+#' @seealso 
+#' @example category_legend_drawer(node_clrs  
+#' = c("#CEAB07", "deeppink2"), LcolN = 1,
+#'  legend_items = c("Bombus", "Plant"), ntwrks_page = 9, colN =3)
+#' @export
+tableLegend <- function(x, table_title, table_items, directory, fname, legend_items, node_clrs,
+                        fill_col, y.space, ntwrks_page, colN, LcolN, LegcolN){
+  
+  if(missing(directory)) { directory <- 'NetworkGraphs' }
+  if(missing(fname)) {fname <- 'TableLegend.png'}
+  if(missing(table_title)){table_title <- ""}
+  if(missing(fill_col)){fill_col <- 'white'}
+  if(missing(y.space)){y.space <- seq(from = 1, to = 2, length.out = 5)}
+  
+  dims <- graph_dims(ntwrks_page, col = colN)
+  
+  # create the categorical legend.
+  
+  d <- data.frame(Group = c('Bombus', 'Plant'),
+                  Dummy = c(1,1), Dummy2 = c(1,1))
+  
+  v <- c("#CEAB07", "deeppink2")
+  names(v) <- c('Bombus', 'Plant')
+  
+  p <- ggplot2::ggplot(d, ggplot2::aes(x= Dummy, y=Dummy2, color = Group)) + 
+    ggplot2::geom_point() +
+    ggplot2::guides(color = ggplot2::guide_legend(override.aes = list(size=12))) + 
+    ggplot2::scale_color_manual(values = v) + 
+    ggplot2::labs(color = 'Major Interacting\nGroups ') +
+    ggplot2::theme(legend.key = ggplot2::element_rect(fill = "white"),
+                   legend.title.align = 0.5,
+                   legend.key.size = unit(2.5, 'cm'), 
+                   legend.key.height = unit(3, 'cm'), 
+                   legend.key.width = unit(3, 'cm'), 
+                   legend.title = ggplot2::element_text(size = 28),
+                   legend.text = ggplot2::element_text(size = 24)) 
+  
+  catLeg <- cowplot::get_legend(p)
+  
+  #  create the legend table. 
+  lname <- file.path(directory, fname)
+  grp <- ceiling(length(table_items)/LegcolN)
+  l <- (grp * LegcolN) - length(table_items)
+  
+  table_items <- c(table_items, rep("", l))
+  v <- matrix(data = table_items , nrow = grp, ncol = LegcolN)
+  tt2 <- gridExtra::ttheme_minimal(core=list(fg_params=list(hjust=0, x=0.1)),
+                                   rowhead=list(fg_params=list(hjust=0, x=0)),
+                                   base_size = 20)
+  
+  tableLeg <- gridExtra::tableGrob(v, theme = tt2)
+  tableLeg <- gridExtra::grid.arrange(top = grid::textGrob(
+    table_title, gp=grid::gpar(fontsize=40)),
+    tableLeg)
+  
+  # Create the bubble size legend
+  net <- lapply(x, igraph::graph_from_incidence_matrix, weight = T)
+  deg <- lapply(net, igraph::centr_degree,  mode = "all")
+  
+  vals <- vector(mode = 'list', length = length(deg))
+  for (i in 1:length(deg)){
+    vals[[i]] <- deg[[i]][['res']]
+  }
+  
+  interaction_no <- Reduce(c,vals)
+  breaks <- (max(interaction_no) - min(interaction_no)) / 4
+  Intervals <- c(min(interaction_no), round(breaks * 1),
+                 round(breaks * 2), round(breaks * 3), max(interaction_no)
+  )
+  vals_size <- 2.5 * sqrt(Intervals)
+  size_legend <- data.frame('Interactions' = Intervals,  'Area' = vals_size)
+  
+  # prepare the figure 
+  p <- ggplot2::ggplot(size_legend, ggplot2::aes(Interactions, Area, size = Area)) + 
+    ggplot2::geom_point() +
+    ggplot2::theme(legend.key = 
+                     ggplot2::element_rect(fill = "white"),
+                   legend.title.align = 0.5,
+                   legend.key.size = unit(1, 'cm'), 
+                   legend.key.height = unit(2, 'cm'), 
+                   legend.key.width = unit(2, 'cm'), 
+                   legend.title = ggplot2::element_text(size = 28),
+                   legend.text = ggplot2::element_text(size = 24)) +
+    ggplot2::labs(size = 'No. of Interacting\nspecies')
+  
+  sizeLeg <- cowplot::get_legend(p)
+  
+  # now combine the three legends. 
+  grobBY <- list(tableLeg, sizeLeg, catLeg)
+  
+  lays <- rbind(
+    c(NA,NA,NA,NA,NA,NA),
+    c(1,1,1,1,1, 2),
+    c(1,1,1,1,1, 2),
+    c(1,1,1,1,1, 2),
+    c(1,1,1,1,1, 2),
+    c(1,1,1,1,1, 2),
+    c(1,1,1,1,1, 3),
+    c(1,1,1,1,1, 3),
+    c(1,1,1,1,1, 3),
+    c(NA,NA,NA,NA,NA,NA)
+  )
+  
+  bucket <- gridExtra::grid.arrange(grobs = grobBY, layout_matrix = lays)
+  png(lname,
+      width = 1984, height = dims$H, units = "px", pointsize = 12)
+  invisible(grid::grid.draw(bucket))
+  invisible(dev.off())
+  
+  message(paste0("'", fname, 
+                 "' has been rendered as a legend and saved to:\n ",
+                 file.path(directory, fname)))
 }
 
 
@@ -421,7 +558,7 @@ netPage2 <- function(directory, col_var, row_var, fname, sep_char, mainT, Tlegen
   
   # place on the page and print.
   ml <- gridExtra::marrangeGrob(grobs = g2p, 
-                                layout_matrix = layout, top = '')
+                                layout_matrix = layout, top = "")
   pdf(file = file.path(directory, fname), paper = 'a4')
   print(ml)
   invisible(dev.off())
@@ -430,136 +567,4 @@ netPage2 <- function(directory, col_var, row_var, fname, sep_char, mainT, Tlegen
                  "' has been rendered as a pdf and saved to:\n ",
                  file.path(directory, fname)))
 }
-
-#' Draw three legends for the plots and save to png
-#' 
-#' This quickly draws three different legends. One is a table to show the 
-#' abbreviations which are used in the nets. One legend shows the two major
-#' categorical colors which are used in the nets. The final legend is a size legend, 
-#' which is not to scale, but numerically shows the range in the number of 
-#' interacting species. 
-#' 
-#' @param x a list of matrices to render graphs of (output of 'arrange_nets')
-#' @param table_items vector of names for legend portion of the table
-#' @param directory location to size legend before assembling to final product
-#' @param fname a file name for the legend, defaults to legend. 
-#' @param legend_items character vector with names of node items
-#' @param node_clrs character vector with node item colors
-#' @param fill_col a character vector of fill colors for the size bubbles
-#' @param y.space a numeric vector of 'distances' for the legend elements
-#' @param filename defaults to 'SizeLegend'
-#' @param ntwrks_page the number of networks you plan on placing on each page
-#' @param LcolN number of columns to split legend across
-#' @param LegcolN number of columns in the table
-#' @param colN number of columns for the nets on the page
-#' @seealso 
-#' @example category_legend_drawer(node_clrs  
-#' = c("#CEAB07", "deeppink2"), LcolN = 1,
-#'  legend_items = c("Bombus", "Plant"), ntwrks_page = 9, colN =3)
-#' @export
-tableLegend <- function(x, table_items, directory, fname, legend_items, node_clrs,
-                         fill_col, y.space, ntwrks_page, colN, LcolN, LegcolN){
-  
-  if(missing(directory)) { directory <- 'NetworkGraphs' }
-  if(missing(fname)) {fname <- 'TableLegend.png'}
-  if(missing(fill_col)){fill_col <- 'white'}
-  if(missing(y.space)){y.space <- seq(from = 1, to = 2, length.out = 5)}
-  
-  dims <- graph_dims(ntwrks_page, col = colN)
-  
-  # create the categorical legend.
-  
-  d <- data.frame(Group = c('Bombus', 'Plant'),
-                  Dummy = c(1,1), Dummy2 = c(1,1))
-  
-  v <- c("#CEAB07", "deeppink2")
-  names(v) <- c('Bombus', 'Plant')
-  
-  p <- ggplot2::ggplot(d, ggplot2::aes(x= Dummy, y=Dummy2, color = Group)) + 
-    ggplot2::geom_point() +
-    ggplot2::guides(color = ggplot2::guide_legend(override.aes = list(size=12))) + 
-    ggplot2::scale_color_manual(values = v) + 
-    ggplot2::labs(color = 'Major Interacting\nGroups ') +
-    ggplot2::theme(legend.key = ggplot2::element_rect(fill = "white"),
-                   legend.title.align = 0.5,
-                   legend.key.size = unit(2.5, 'cm'), 
-                   legend.key.height = unit(3, 'cm'), 
-                   legend.key.width = unit(3, 'cm'), 
-                   legend.title = ggplot2::element_text(size = 24),
-                   legend.text = ggplot2::element_text(size = 20)) 
-  
-  catLeg <- cowplot::get_legend(p)
-  
-  #  create the legend table. 
-  lname <- file.path(directory, fname)
-  grp <- ceiling(length(table_items)/LegcolN)
-  l <- (grp * LegcolN) - length(table_items)
-  
-  table_items <- c(table_items, rep("", l))
-  v <- matrix(data = table_items , nrow = grp, ncol = LegcolN)
-  tt2 <- gridExtra::ttheme_minimal(core=list(fg_params=list(hjust=0, x=0.1)),
-                                   rowhead=list(fg_params=list(hjust=0, x=0)),
-                                   base_size = 20)
-  
-  tableLeg <- gridExtra::tableGrob(v, theme = tt2)
-  
-  # Create the bubble size legend
-  net <- lapply(x, igraph::graph_from_incidence_matrix, weight = T)
-  deg <- lapply(net, igraph::centr_degree,  mode = "all")
-  
-  vals <- vector(mode = 'list', length = length(deg))
-  for (i in 1:length(deg)){
-    vals[[i]] <- deg[[i]][['res']]
-  }
-  
-  interaction_no <- Reduce(c,vals)
-  breaks <- (max(interaction_no) - min(interaction_no)) / 4
-  Intervals <- c(min(interaction_no), round(breaks * 1),
-                 round(breaks * 2), round(breaks * 3), max(interaction_no)
-  )
-  vals_size <- 2.5 * sqrt(Intervals)
-  size_legend <- data.frame('Interactions' = Intervals,  'Area' = vals_size)
-  
-  # prepare the figure 
-  p <- ggplot2::ggplot(size_legend, ggplot2::aes(Interactions, Area, size = Area)) + 
-    ggplot2::geom_point() +
-    ggplot2::theme(legend.key = 
-                     ggplot2::element_rect(fill = "white"),
-                   legend.title.align = 0.5,
-                   legend.key.size = unit(1, 'cm'), 
-                   legend.key.height = unit(2, 'cm'), 
-                   legend.key.width = unit(2, 'cm'), 
-                   legend.title = ggplot2::element_text(size = 24),
-                   legend.text = ggplot2::element_text(size = 20)) +
-    ggplot2::labs(size = 'No. of Interacting\nspecies')
-  
-  sizeLeg <- cowplot::get_legend(p)
-  
-  # now combine the three legends. 
-  grobBY <- list(tableLeg, sizeLeg, catLeg)
-  
-  lays <- rbind(
-    c(NA,NA,NA,NA,NA,NA),
-    c(1,1,1,1,1, 2),
-    c(1,1,1,1,1, 2),
-    c(1,1,1,1,1, 2),
-    c(1,1,1,1,1, 2),
-    c(1,1,1,1,1, 2),
-    c(1,1,1,1,1, 3),
-    c(1,1,1,1,1, 3),
-    c(1,1,1,1,1, 3),
-    c(NA,NA,NA,NA,NA,NA)
-  )
-  
-  bucket <- gridExtra::grid.arrange(grobs = grobBY, layout_matrix = lays)
-  png(lname,
-      width = 1984, height = dims$H, units = "px", pointsize = 12)
-  invisible(grid::grid.draw(bucket))
-  invisible(dev.off())
-  
-  message(paste0("'", fname, 
-                 "' has been rendered as a legend and saved to:\n ",
-                 file.path(directory, fname)))
-}
-
 

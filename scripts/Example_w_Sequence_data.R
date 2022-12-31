@@ -112,10 +112,10 @@ plsl <- plants_legend %>%
 
 tableLegend(x = resin, node_clrs = c("#CEAB07", "deeppink2"), ntwrks_page = 9,
                  colN = 3, LcolN = 1, legend_items = c("Bombus", "Plant"), 
-                 table_items = plsl, fill_col = 'black',
+                 table_items = plsl, fill_col = 'black', table_title = 'Plant Species',
                  LegcolN = 5, y.space = c(1, 1.35, 1.25, 2.25, 1.95))
 
-netPage2(col_var = c('Kraken', 'Bracken', 'BLAST'), 
+netPage2(col_var = c('Kraken', 'Bracken', 'BLAST'), fname = 'Mosaiced_molecular_nets', 
          mainT = 'Comparision of Foraging Patterns from Three Sequence Alignment Algorithms',
          row_var = c('Early', 'Mid', 'Late'), sep = '.')
 arranged_plants
