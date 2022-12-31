@@ -94,8 +94,8 @@ resin <- bee_obs_wk %>%  # if sp. we need to leave genus spelt out, if epithet p
 list2env(resin,env = environment())
 
 
-graphDrawer(Kraken.Late,
-            fname = 'Kraken.Late-test',
+graphDrawer(Bracken.Mid,
+         #   fname = 'Kraken.Late-test',
             edge_clr = 'lightseagreen',
             node_clrs  = c("#CEAB07", "deeppink2"),
             legend_items = c("Bombus", "Plant"),
@@ -122,25 +122,14 @@ netPage2(col_var = c('Kraken', 'Bracken', 'BLAST'), fname = 'Mosaiced_molecular_
 arranged_plants
 
 
-blanker(Kraken.Late)
 
 
-x <- Kraken.Late
-netL <- nrow(x) + ncol(x) 
-QnetL <- round(netL / 4 , 0 ) 
-colN <- ceiling(netL/10)
-sides <- netL/2
-
-Lside <- sides
-RSUpper <- ceiling(sides/2) ; 
-RSLower <- floor(sides/2)
-
-p <- data.frame(
-  x[,1:(RSUpper - nrow(x))], 
-  matrix(data = 0, nrow(x), ncol = colN),
-  x[,(RSUpper - nrow(x) + 1):(ncol(x) - (RSLower))],
-  matrix(data = 0, nrow(x), ncol = colN),
-  x[, (ncol(x) - RSLower + 1):ncol(x)] )
 
 
-p
+
+
+
+positions <- c(222, 248, 268, 275)
+
+seq(from = 5, to = 2, length.out = 
+      length(which((positions > 245 & positions < 270) == TRUE)))

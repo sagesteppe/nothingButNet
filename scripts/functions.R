@@ -49,7 +49,7 @@ blanker <- function(x){
   if(colN < 3){colN <- 3}
   thirdStart <- round( round(netL * 3/4) - (colN*3/4) ) 
   
-  if(
+  if( # net work with equal number of members in each bipartite group
     nrow(x) == ncol(x)) {
     
     A = x[1:round(QnetL),] 
@@ -63,47 +63,43 @@ blanker <- function(x){
       p[,(round(QnetL)+1):ncol(x)]
     )
     
-  } else if(
+  } else if( # one bipartite group has more members than the other
     nrow(x) < QnetL
   ) {
     
     sides <- netL/2
-    if(netL %% 2 == 1){
+    if(netL %% 2 == 1){ # variables for odd numbers of members in a network
       
-      Lside <- ceiling(sides) - ceiling(sides) %% 2 # always return the even number 
-      Rside <- netL - Lside
+      Lside <- ceiling(sides) - ceiling(sides) %% 2 ; Rside <- netL - Lside
       RSUpper <- ceiling(Rside/2) - ceiling(Rside/2) %% 2
-      RSLower <- Rside - RSUpper # if an odd exists put it here.
+      RSLower <- Rside - RSUpper 
       
-    }  else { 
-      Lside <- sides
-      RSUpper <- ceiling(sides/2) ; 
-      RSLower <- floor(sides/2)
+    }  else { # variables for even numbers of members in a network
+      
+      Lside <- sides; RSUpper <- ceiling(sides/2);  RSLower <- floor(sides/2)
+      
     }
     
-    p <- data.frame(
+    p <- data.frame( # make all plots for networks with many more of one bipartite member than the other
       x[,1:(RSUpper - nrow(x))], 
       matrix(data = 0, nrow(x), ncol = colN),
       x[,(RSUpper - nrow(x) + 1):(ncol(x) - (RSLower))],
       matrix(data = 0, nrow(x), ncol = colN),
       x[, (ncol(x) - RSLower + 1):ncol(x)] )
 
-
   } else {
     
     pA <- rbind(
       x[1:(netL / 4),],
       matrix(data = 0, nrow = colN, ncol = ncol(x)),
-      x[((netL / 4) +1):nrow(x),]
-    )
+      x[((netL / 4) +1):nrow(x),] )
+    
     r <- (netL / 2)  + (netL / 4) -  nrow(x)
+    
     p <- data.frame(
       pA[,1:r], 
       matrix(data = 0, nrow(pA), ncol = colN),
-      pA[,(r + 1):ncol(x)] 
-    )
-    
-    
+      pA[,(r + 1):ncol(x)] )
   }
   
   names(p) <- gsub('\\.\\.', '\\.', names(p))
@@ -163,16 +159,21 @@ vert_lab_position <- function(x){
   
   dist_vals <- c(
     rep(4.5, length(which((positions < 65) == TRUE))),
-    rep(c(2.5,4.5,3.5), each = 1, length.out = 
-          length(which((positions > 65 & positions < 125) == TRUE))),
+    seq(from = 1, to = 4.5, length.out = 
+          length(which((positions > 65 & positions < 90) == TRUE))),
     
-    rep(4.5, length(which((positions > 125 & positions < 245) == TRUE))),
+    seq(from = 4.5, to = 1, length.out = 
+          length(which((positions > 90 & positions < 125) == TRUE))),
     
-    rep(c(2.5,4.5,3.5), each = 1, length.out = 
-          length(which((positions > 245 & positions < 295) == TRUE))),
+    seq(4.5, length(which((positions > 125 & positions < 245) == TRUE))),
+    
+    seq(from = 1, to = 4.5, length.out = 
+          length(which((positions > 245 & positions < 270) == TRUE))),
+    seq(from = 4.5, to = 1, length.out = 
+          length(which((positions > 270 & positions < 295) == TRUE))),
+    
     rep(4.5, length(which((positions > 295) == TRUE)))
     
-    # '0' right, '-pi/2' up, 'pi' left, 'pi/2' down
   )
   
   labels <- list('degree_shift' = degree_shift, 
