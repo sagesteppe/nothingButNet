@@ -67,17 +67,29 @@ blanker <- function(x){
     nrow(x) < QnetL
   ) {
     
+    sides <- netL/2
+    if(netL %% 2 == 1){
+      
+      Lside <- ceiling(sides) - ceiling(sides) %% 2 # always return the even number 
+      Rside <- netL - Lside
+      RSUpper <- ceiling(Rside/2) - ceiling(Rside/2) %% 2
+      RSLower <- Rside - RSUpper # if an odd exists put it here.
+      
+    }  else { 
+      Lside <- sides
+      RSUpper <- ceiling(sides/2) ; 
+      RSLower <- floor(sides/2)
+    }
     
     p <- data.frame(
-      x[,1:round((netL * 1/4) - nrow(x))],
+      x[,1:(RSUpper - nrow(x))], 
       matrix(data = 0, nrow(x), ncol = colN),
-      x[,round(((netL * 1/4) - nrow(x)) + 1):thirdStart], 
+      x[,(RSUpper - nrow(x) + 1):(ncol(x) - (RSLower))],
       matrix(data = 0, nrow(x), ncol = colN),
-      x[,(thirdStart + 1):ncol(x)] 
-    )
+      x[, (ncol(x) - RSLower + 1):ncol(x)] )
+
 
   } else {
-    
     
     pA <- rbind(
       x[1:(netL / 4),],
@@ -90,6 +102,7 @@ blanker <- function(x){
       matrix(data = 0, nrow(pA), ncol = colN),
       pA[,(r + 1):ncol(x)] 
     )
+    
     
   }
   
@@ -258,11 +271,10 @@ graph_dims <- function(ntwrks_page, col){
 #' @seealso 'blanker', 'vertex_names, vert_lab_position','set_colors',
 #' 'graph_dims'
 #' @export
-graphDrawer <- function(data, plot_name, edge_clr, node_clrs,  bg_clr, 
+graphDrawer <- function(data, edge_clr, node_clrs,  bg_clr, 
                         lbl_fnt, legend_items, directory, fname,
                         ntwrks_page, col, H, W){
   
-  if(missing(plot_name)) { plot_name <- substitute(data) }
   if(missing(lbl_fnt)) { lbl_fnt <- 14 }
   if(missing(directory)) { directory <- 'NetworkGraphs' }
   if(missing(fname)) { fname <- paste0(substitute(data), '.png')}
@@ -308,7 +320,7 @@ graphDrawer <- function(data, plot_name, edge_clr, node_clrs,  bg_clr,
   par(mar=c(3,6.5,3,6.5))
   plot(net, layout=template, 
        edge.color = edge_clr,
-       vertex.label.cex = 1.2,
+       vertex.label.cex = 1.25,
        vertex.label = VNames,
        vertex.label.dist= VLPs$dist_vals, 
        vertex.label.degree = VLPs$degree_shift, 
@@ -317,7 +329,7 @@ graphDrawer <- function(data, plot_name, edge_clr, node_clrs,  bg_clr,
     
  invisible(dev.off())
  
- message(paste0("'", plot_name, 
+ message(paste0("'", fname, 
                 "' has been rendered as a graph and saved to:\n ", filename))
  
 
@@ -449,7 +461,7 @@ tableLegend <- function(x, table_title, table_items, directory, fname, legend_it
     c(NA,NA,NA,NA,NA,NA)
   )
   
-  bucket <- gridExtra::grid.arrange(grobs = grobBY, layout_matrix = lays)
+  bucket <- invisible(gridExtra::grid.arrange(grobs = grobBY, layout_matrix = lays))
   png(lname,
       width = 1984, height = dims$H, units = "px", pointsize = 12)
   invisible(grid::grid.draw(bucket))
@@ -554,7 +566,6 @@ netPage2 <- function(directory, col_var, row_var, fname, sep_char, mainT, Tlegen
   legend <- grid::rasterGrob(png::readPNG(file.path(directory, Tlegend_fname)))
   legend <- gridExtra::arrangeGrob(legend, nrow = 1)
   g2p <- c(g2p, leg = list(legend)) 
-  
   
   # place on the page and print.
   ml <- gridExtra::marrangeGrob(grobs = g2p, 
