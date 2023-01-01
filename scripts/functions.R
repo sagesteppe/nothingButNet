@@ -571,6 +571,10 @@ nets2Page <- function(directory, col_var, row_var, fname, sep_char, mainT, Tlege
   g2p <- c(g2p, leg = list(legend)) 
   
   # place on the page and print.
+  
+  ifelse(!dir.exists(file.path(dirOUT)),
+         dir.create(file.path(dirOUT)), FALSE)
+  
   ml <- gridExtra::marrangeGrob(grobs = g2p, 
                                 layout_matrix = layout, top = "")
   pdf(file = file.path(dirOUT, fname), paper = 'a4')

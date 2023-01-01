@@ -1,6 +1,5 @@
 library(tidyverse)
-#set_here('~/Documents/floral_observations')  # move this to be the root of the project folder on your box
-# i_am('~/Documents/floral_observations')
+
 setwd('~/Documents/nothingButNet')
 p2d <- file.path('data/raw')
 files <- list.files(p2d, pattern = 'csv')
