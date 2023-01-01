@@ -1,23 +1,22 @@
-library(here)
 library(tidyverse)
-library(igraph)
-# set_here('~/Documents/floral_observations')  # move this to be the root of the project folder on your box
-setwd('~/Documents/floral_observations')
+
+setwd('~/Documents/nothingButNet')
+source('scripts/functions.R')
 
 p2d <- 'data'
-files <- list.files(p2d, pattern = 'csv')
+files <- list.files(file.path(p2d, 'rmbl'), pattern = 'csv')
 
 flr_ranks <- read.csv(
-  paste0(p2d, '/', files[grep('flower_ranks', files)] )) %>% 
+  file.path(p2d, 'rmbl', files[grep('flower_ranks', files)] )) %>% 
   select(site, doy, week, tot.obs.length, habitat, plant.species:abun.rank)
 
 observation_times <- read.csv(
-  paste0(p2d, '/', files[grep('queen_observations', files)]) ) %>% 
+  file.path(p2d, 'rmbl', files[grep('queen_observations', files)]) ) %>% 
   select(site, week, tot.obs.length) %>% 
   distinct(site, week, .keep_all = T)
 
 bee_obs <- read.csv(
-  paste0(p2d, '/', files[grep('queen_observations', files)]) ) #%>% 
+  file.path(p2d, 'rmbl', files[grep('queen_observations', files)]) ) %>% 
   filter(caste == 'q') %>% 
   mutate(species = gsub('\\..*$', '', species)) %>% 
   select(site, doy, week, tot.obs.length, species, plant.species,
@@ -28,49 +27,24 @@ bee_obs <- read.csv(
   drop_na(plant.species) %>% 
   group_by(site, week, species, plant.species) %>% 
   count(name = 'interactions') %>% 
-  left_join(., observation_times) %>% 
+  left_join(., observation_times, by = c("site", "week")) %>% 
   mutate(period = case_when(
     week %in% 3:5 ~ 'Early',
     week %in% 6:8 ~ 'Mid',
     week %in% 9:11 ~ 'Late'
   ))
 
-arranged_plants <- c('C.gunnisonii', 'E.grandiflorum',
-                     
-                     'A.columbianum', 'A.coerulea', "T.fendleri",
-                     'D.barbeyi', 'D.nuttallianum',
-                     
-                     "L.leucanthus", 'L.bakeri', "V.americana",
-                     
-                     "E.triflora","P.pulcherrima",
-                     
-                     "A.lewisii",
-                     "S.sp",
-                     "V.praemorsa", 
-                     "C.lanceolata",
-                     
-                     "D.pulchellum",
-                     
-                     "M.ciliata" ,"M.fusiformis",
-                     "H.capitatum", "H.fendleri",
-                     "A.urticifolia", "P.procera", "P.bracteosa",
-                     
-                     "C.parryi", "D.hoopesii", "H.quinquenervis", "L.bigelovii",
-                     "E.speciosus", "S.integerrimus", "T.officinale", "W.arizonica",
-                     
-                     "D.involucrata",
-                     "V.occidentalis",
-                      
-                     "F.speciosa",
-                     'O.occidentalis'
-)
+
+f <- list.files(file.path(p2d, 'raw'), 'csv')
+arranged_plants <- read.csv(file.path(p2d, 'raw', f[grep('species', f)])) %>% 
+  pull(abbreviation)
 
 arranged_bees <- c('bifarius', 'mixtus', 'rufocinctus', 'sylvicola',
                    'flavifrons',
                    'appositus', 'californicus', 'nevadensis', 
                    'unknown') 
 
-rm(p2d, files, observation_times)
+rm(p2d, files, f, observation_times)
 
 bee_obs_wk <- bee_obs %>% 
   ungroup() %>% 
@@ -84,7 +58,7 @@ bee_obs_wk <- bee_obs %>%
 
 resin <- bee_obs_wk %>% 
   select(-tot.obs.length, -n, -Prop) %>%
-  mutate(plant.species = paste0(substr(plant.species, 1,1), '. ',
+  mutate(plant.species = paste0(substr(plant.species, 1,1), '.',
                                 gsub("^.*\\.", "", plant.species ))) %>% 
   pivot_wider(names_from = plant.species, values_from = Interactions_total) %>% 
   mutate(across(everything(), ~replace_na(.x, 0))) %>% 
@@ -94,25 +68,23 @@ resin <- bee_obs_wk %>%
   lapply(., select, -period) %>% 
   lapply(., as.matrix)
 
-
-
 # networks
 
 tet <- lapply(resin, arrange_nets, col_arrange = arranged_plants, 
               row_arrange = arranged_bees)
 rm(bee_obs_wk, resin, bee_obs)
 
-early <- tet[['Early']]
-mid <- tet[['Mid']]
-late <- tet[['Late']]
+observations_early <- tet[['Early']]
+observations_mid <- tet[['Mid']]
+observations_late <- tet[['Late']]
 
-graphDrawer(late, lbl_fnt = 14,
-            plot_name = 'observation-early',
+graphDrawer(early, lbl_fnt = 14,
             edge_clr = 'lightseagreen',
             node_clrs  = c("#CEAB07", "deeppink2"),
             legend_items = c("Bombus", "Plant"),
-            fname = 'molecular-late', 
             ntwrks_page = 12,
             col = 3
 )
+
+rm(observations_early, observations_mid, observations_mid)
 

@@ -1,6 +1,4 @@
-library(here)
 library(tidyverse)
-library(igraph)
 #set_here('~/Documents/floral_observations')  # move this to be the root of the project folder on your box
 # i_am('~/Documents/floral_observations')
 setwd('~/Documents/nothingButNet')
@@ -92,6 +90,7 @@ resin <- bee_obs_wk %>%  # if sp. we need to leave genus spelled out, if epithet
         row_arrange = arranged_bees) # to remove empty plants
 
 list2env(resin,env = environment())
+rm(arranged_bees, arranged_plants)
 
 graphDrawer(Kraken.Late,
             edge_clr = 'lightseagreen',
@@ -100,6 +99,9 @@ graphDrawer(Kraken.Late,
             ntwrks_page = 9,
             col = 3
 )
+
+rm(BLAST.Early, BLAST.Late, BLAST.Mid, Bracken.Early, Bracken.Late, Bracken.Mid,
+   Kraken.Early, Kraken.Late, Kraken.Mid)
 
 rm(seqs, bee_obs_wk)
 
@@ -113,6 +115,8 @@ tableLegend(x = resin, node_clrs = c("#CEAB07", "deeppink2"), ntwrks_page = 9,
                  colN = 3, LcolN = 1, legend_items = c("Bombus", "Plant"), 
                  table_items = plsl, fill_col = 'black', table_title = 'Plant Species',
                  LegcolN = 5, y.space = c(1, 1.35, 1.25, 2.25, 1.95))
+
+rm(plsl, plants_legend)
 
 nets2Page(col_var = c('Kraken', 'Bracken', 'BLAST'), fname = 'Mosaiced_molecular_nets', 
          mainT = 'Comparision of Foraging Patterns from Three Sequence Alignment Algorithms',

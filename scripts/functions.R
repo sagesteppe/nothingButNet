@@ -277,7 +277,7 @@ graphDrawer <- function(data, edge_clr, node_clrs,  bg_clr,
                         ntwrks_page, col, H, W){
   
   if(missing(lbl_fnt)) { lbl_fnt <- 14 }
-  if(missing(directory)) { directory <- 'NetworkGraphs' }
+  if(missing(directory)) { directory <- 'NetworkGraphs/Intermediates' }
   if(missing(fname)) { fname <- paste0(substitute(data), '.png')}
   if(missing(ntwrks_page)) { ntwrks_page <- 1 } | if(missing(col)) { col <- 1 }
   if(missing(H)) { H <- NA}  |  if(missing(W)) { W <- NA}
@@ -367,7 +367,7 @@ graphDrawer <- function(data, edge_clr, node_clrs,  bg_clr,
 tableLegend <- function(x, table_title, table_items, directory, fname, legend_items, node_clrs,
                         fill_col, y.space, ntwrks_page, colN, LcolN, LegcolN){
   
-  if(missing(directory)) { directory <- 'NetworkGraphs' }
+  if(missing(directory)) { directory <- 'NetworkGraphs/Intermediates' }
   if(missing(fname)) {fname <- 'TableLegend.png'}
   if(missing(table_title)){table_title <- ""}
   if(missing(fill_col)){fill_col <- 'white'}
@@ -493,6 +493,7 @@ tableLegend <- function(x, table_title, table_items, directory, fname, legend_it
 nets2Page <- function(directory, col_var, row_var, fname, sep_char, mainT, Tlegend_fname){
   
   if(missing(directory)) {directory <- 'NetworkGraphs'}
+  dirIN <- file.path(directory, 'Intermediates'); dirOUT <- file.path(directory, 'Output')
   if(missing(fname)) {fname <- 'mosaiced_Nets.pdf'}
   if(missing(sep_char))  {sep_char <- ''}
   if(missing(mainT))  {mainT <- 'Bill walton thinks u forgot a title'}
@@ -507,7 +508,7 @@ nets2Page <- function(directory, col_var, row_var, fname, sep_char, mainT, Tlege
   image_orders <- matrix(paste0(colOrder, sep_char, rowOrder, '.png'), 
                          ncol = length(col_var))
   image_orders <- as.vector(t(image_orders)) 
-  image_orders <- file.path(directory, image_orders)  
+  image_orders <- file.path(dirIN, image_orders)  
   images = lapply(image_orders, png::readPNG)
   grob_images = lapply(images, grid::rasterGrob)
   
@@ -565,20 +566,20 @@ nets2Page <- function(directory, col_var, row_var, fname, sep_char, mainT, Tlege
   g2p <- g2p[ord2grab]
   
   # load and place the legend onto the grobs2plot
-  legend <- grid::rasterGrob(png::readPNG(file.path(directory, Tlegend_fname)))
+  legend <- grid::rasterGrob(png::readPNG(file.path(dirIN, Tlegend_fname)))
   legend <- gridExtra::arrangeGrob(legend, nrow = 1)
   g2p <- c(g2p, leg = list(legend)) 
   
   # place on the page and print.
   ml <- gridExtra::marrangeGrob(grobs = g2p, 
                                 layout_matrix = layout, top = "")
-  pdf(file = file.path(directory, fname), paper = 'a4')
+  pdf(file = file.path(dirOUT, fname), paper = 'a4')
   print(ml)
   invisible(dev.off())
   
   message(paste0("'", fname, 
                  "' has been rendered as a pdf and saved to:\n ",
-                 file.path(directory, fname)))
+                 file.path(dirOUT, fname)))
   
 }
 
