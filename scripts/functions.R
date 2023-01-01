@@ -159,17 +159,17 @@ vert_lab_position <- function(x){
   
   dist_vals <- c(
     rep(4.5, length(which((positions < 65) == TRUE))),
-    seq(from = 1, to = 4.5, length.out = 
+    seq(from = 2, to = 7, length.out = 
           length(which((positions > 65 & positions < 90) == TRUE))),
     
-    seq(from = 4.5, to = 1, length.out = 
+    seq(from = 7, to = 2, length.out = 
           length(which((positions > 90 & positions < 125) == TRUE))),
     
-    seq(4.5, length(which((positions > 125 & positions < 245) == TRUE))),
+    rep(4.5, length(which((positions > 125 & positions < 245) == TRUE))),
     
-    seq(from = 1, to = 4.5, length.out = 
+    seq(from = 2, to = 7, length.out = 
           length(which((positions > 245 & positions < 270) == TRUE))),
-    seq(from = 4.5, to = 1, length.out = 
+    seq(from = 7, to = 2, length.out = 
           length(which((positions > 270 & positions < 295) == TRUE))),
     
     rep(4.5, length(which((positions > 295) == TRUE)))
@@ -279,9 +279,10 @@ graphDrawer <- function(data, edge_clr, node_clrs,  bg_clr,
   if(missing(lbl_fnt)) { lbl_fnt <- 14 }
   if(missing(directory)) { directory <- 'NetworkGraphs' }
   if(missing(fname)) { fname <- paste0(substitute(data), '.png')}
-  
   if(missing(ntwrks_page)) { ntwrks_page <- 1 } | if(missing(col)) { col <- 1 }
   if(missing(H)) { H <- NA}  |  if(missing(W)) { W <- NA}
+  if(missing(edge_clr)) {edge_clr <- 'black'}
+  
   dims <- list('H' = H, 'W' = W)
   if(is.na(dims$H) + is.na(dims$W) == 0){
     dims 
@@ -293,7 +294,6 @@ graphDrawer <- function(data, edge_clr, node_clrs,  bg_clr,
     dims <- graph_dims(ntwrks_page, col)
   }
   
-  if(missing(edge_clr)) {edge_clr <- 'black'}
   
   filename <- file.path(directory, fname)
   
@@ -310,8 +310,8 @@ graphDrawer <- function(data, edge_clr, node_clrs,  bg_clr,
   net <- set_colors(x = blanked_data, net, node_clrs, VNames = VNames)
   
   V(net)$label.color <- 'black'
-  V(net)$size = 2.5*sqrt(deg$res) 
-  E(net)$width = E(net)$weight/5
+  V(net)$size = 2.5*sqrt(deg$res)
+  E(net)$width = E(net)$weight/4
   
   template <- layout_in_circle(net)
   
@@ -488,9 +488,11 @@ tableLegend <- function(x, table_title, table_items, directory, fname, legend_it
 #"        row_var = c('early', 'mid', 'late'))
 #' @return a cowplot arranged grid.
 #' @export
-netPage2 <- function(directory, col_var, row_var, fname, sep_char, mainT, Tlegend_fname){
+#' 
+#' 
+nets2Page <- function(directory, col_var, row_var, fname, sep_char, mainT, Tlegend_fname){
   
-  if(missing(directory)) { directory <- 'NetworkGraphs' }
+  if(missing(directory)) {directory <- 'NetworkGraphs'}
   if(missing(fname)) {fname <- 'mosaiced_Nets.pdf'}
   if(missing(sep_char))  {sep_char <- ''}
   if(missing(mainT))  {mainT <- 'Bill walton thinks u forgot a title'}
@@ -537,11 +539,11 @@ netPage2 <- function(directory, col_var, row_var, fname, sep_char, mainT, Tlegen
                       left = row_var[2:(length(row_var)-1)], 
                       padding = unit(0.0, "line"))
   
-  list2env(top_grobs,env = environment())
+  list2env(top_grobs, env = environment())
   
   # this recovers the bottom grobs
   L <- length(grob_images)
-  range <- ((L - rowN) + 1 ): L
+  range <- ((L - rowN) + 1 ):L
   bottom_grobs <- split(grob_images[((L - rowN) + 1 ): L],
                         seq_along(range) / 1)
   names(bottom_grobs) <- paste0('b', seq(1:length(bottom_grobs)))
@@ -555,7 +557,6 @@ netPage2 <- function(directory, col_var, row_var, fname, sep_char, mainT, Tlegen
                     padding = unit(0.0, "line"))
   
   list2env(bottoms, env = environment())
-  
   
   # ensure the grobs are in the correct order for the mosaic. 
   g2p <- mget(ls(pattern = '[t|b][1-9]{1}'))
@@ -578,5 +579,6 @@ netPage2 <- function(directory, col_var, row_var, fname, sep_char, mainT, Tlegen
   message(paste0("'", fname, 
                  "' has been rendered as a pdf and saved to:\n ",
                  file.path(directory, fname)))
+  
 }
 

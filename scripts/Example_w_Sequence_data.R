@@ -69,7 +69,7 @@ bee_obs_wk <- seqs %>%
   select(bombus.species, Taxon, period, Interactions_total) %>% 
   ungroup(Taxon) 
 
-resin <- bee_obs_wk %>%  # if sp. we need to leave genus spelt out, if epithet present, than abbreviate species. 
+resin <- bee_obs_wk %>%  # if sp. we need to leave genus spelled out, if epithet present, than abbreviate species. 
   ungroup() %>% 
   mutate(periods = str_count(Taxon, pattern =  fixed('.'))) %>% 
   mutate(Taxon = str_replace(Taxon, " ", "."),
@@ -93,9 +93,7 @@ resin <- bee_obs_wk %>%  # if sp. we need to leave genus spelt out, if epithet p
 
 list2env(resin,env = environment())
 
-
-graphDrawer(Bracken.Mid,
-         #   fname = 'Kraken.Late-test',
+graphDrawer(Kraken.Late,
             edge_clr = 'lightseagreen',
             node_clrs  = c("#CEAB07", "deeppink2"),
             legend_items = c("Bombus", "Plant"),
@@ -106,7 +104,7 @@ graphDrawer(Bracken.Mid,
 rm(seqs, bee_obs_wk)
 
 plsl <- plants_legend %>% 
-  filter(str_detect(full, '.sp.$', negate = T)) %>% 
+  filter(str_detect(full, '[.]sp[.]$', negate = T)) %>% 
   mutate(full = str_pad(full, (max(str_length(full)) + 1), "right"),
          full = str_replace(full, "\\.", " ")) %>% 
   pull(full)
@@ -116,20 +114,9 @@ tableLegend(x = resin, node_clrs = c("#CEAB07", "deeppink2"), ntwrks_page = 9,
                  table_items = plsl, fill_col = 'black', table_title = 'Plant Species',
                  LegcolN = 5, y.space = c(1, 1.35, 1.25, 2.25, 1.95))
 
-netPage2(col_var = c('Kraken', 'Bracken', 'BLAST'), fname = 'Mosaiced_molecular_nets', 
+nets2Page(col_var = c('Kraken', 'Bracken', 'BLAST'), fname = 'Mosaiced_molecular_nets', 
          mainT = 'Comparision of Foraging Patterns from Three Sequence Alignment Algorithms',
          row_var = c('Early', 'Mid', 'Late'), sep = '.')
-arranged_plants
 
 
 
-
-
-
-
-
-
-positions <- c(222, 248, 268, 275)
-
-seq(from = 5, to = 2, length.out = 
-      length(which((positions > 245 & positions < 270) == TRUE)))
