@@ -56,7 +56,7 @@ palyn_early <- tet[['Early']]
 palyn_mid <- tet[['Mid']]
 palyn_late <- tet[['Late']]
 
-graphDrawer(palyn_mid, lbl_fnt = 14,
+graphDrawer(palyn_late, lbl_fnt = 14,
             edge_clr = 'lightseagreen',
             node_clrs  = c("#CEAB07", "deeppink2"),
             legend_items = c("Bombus", "Plant"),
@@ -64,5 +64,3 @@ graphDrawer(palyn_mid, lbl_fnt = 14,
             col = 3
 )
 
-
-blanker(palyn_mid)

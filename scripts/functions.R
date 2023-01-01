@@ -63,7 +63,6 @@ blanker <- function(x){
       p[,(round(QnetL)+1):ncol(x)]
       
     )
-    print('A')
     
   } else if( # one bipartite group has many more members than the other
     nrow(x) < QnetL
@@ -76,12 +75,10 @@ blanker <- function(x){
       RSUpper <- ceiling(Rside/2) - ceiling(Rside/2) %% 2
       RSLower <- Rside - RSUpper 
       
-      print('B')
       
     }  else { # variables for even numbers of members in a network
       
       Lside <- sides; RSUpper <- ceiling(sides/2);  RSLower <- floor(sides/2)
-      print('C')
       
     }
     
@@ -95,22 +92,21 @@ blanker <- function(x){
   } else { # one group has only a few more members than the other
     
     pA <- rbind(
-      x[1:(netL / 4),],
+      x[1:floor((netL / 4)),],
       matrix(data = 0, nrow = colN, ncol = ncol(x)),
-      x[((netL / 4) +1):nrow(x),] )
+      x[ceiling((netL / 4)):nrow(x),,drop=FALSE] )
     
     r <- (netL / 2)  + (netL / 4) -  nrow(x)
     
     p <- data.frame(
-      pA[,1:r], 
+      pA[,1:floor(r)], 
       matrix(data = 0, nrow(pA), ncol = colN),
-      pA[,(r + 1):ncol(x)] )
+      pA[,(floor(r) + 1):ncol(x)] )
     
-    print('D')
   }
   
   colnames(p) <- gsub('\\.\\.', '\\.', colnames(p))
-  rownames(p) <- gsub('X[.][0-9]', 'X', rownames(p))
+  rownames(p) <- gsub('X[.]', 'X', rownames(p))
   return(p)
 }
 
