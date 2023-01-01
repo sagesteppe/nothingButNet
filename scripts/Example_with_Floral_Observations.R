@@ -52,14 +52,16 @@ bee_obs_wk <- bee_obs %>%
   select(species, plant.species, period, Interactions_total, tot.obs.length) %>% 
   ungroup(plant.species) %>% 
   mutate(n = sum(Interactions_total),
-         Prop = Interactions_total/n)
+         Percent = 100 * (Interactions_total/n))
 
 resin <- bee_obs_wk %>% 
-  select(-tot.obs.length, -n, -Prop) %>%
+  select(-tot.obs.length, -n, -Interactions_total) %>%
   mutate(plant.species = paste0(substr(plant.species, 1,1), '.',
                                 gsub("^.*\\.", "", plant.species ))) %>% 
-  pivot_wider(names_from = plant.species, values_from = Interactions_total) %>% 
-  mutate(across(everything(), ~replace_na(.x, 0))) %>% 
+  pivot_wider(names_from = plant.species, values_from = Percent) %>% 
+  mutate(
+    across(everything(), ~ if_else(.x < 1, 1, .x)),
+    across(everything(), ~replace_na(.x, 0))) %>% 
   arrange(period, species) %>% 
   split(., f = .$period) %>% 
   lapply(., column_to_rownames, 'species') %>% 
@@ -76,7 +78,7 @@ observations_early <- tet[['Early']]
 observations_mid <- tet[['Mid']]
 observations_late <- tet[['Late']]
 
-graphDrawer(observations_late, lbl_fnt = 14,
+graphDrawer(observations_early, lbl_fnt = 14,
             edge_clr = 'lightseagreen',
             node_clrs  = c("#CEAB07", "deeppink2"),
             legend_items = c("Bombus", "Plant"),

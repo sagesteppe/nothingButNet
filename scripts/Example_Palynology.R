@@ -47,7 +47,8 @@ arranged_plants <- sort(arranged_plants)
 
 test <- morpho %>% 
   pivot_wider(names_from = morphotype, values_from = Percent) %>% 
-  mutate(across(everything(), ~replace_na(.x, 0))) %>% 
+  mutate(across(everything(), ~ if_else(.x < 1, 1, .x)),
+    across(everything(), ~replace_na(.x, 0))) %>% 
   arrange(period, species) %>% 
   split(., f = .$period) %>% 
   lapply(., column_to_rownames, 'species') %>% 
@@ -61,7 +62,7 @@ palyn_early <- tet[['Early']]
 palyn_mid <- tet[['Mid']]
 palyn_late <- tet[['Late']]
 
-graphDrawer(palyn_late, lbl_fnt = 14,
+graphDrawer(palyn_early, lbl_fnt = 14,
             edge_clr = 'lightseagreen',
             node_clrs  = c("#CEAB07", "deeppink2"),
             legend_items = c("Bombus", "Plant"),
