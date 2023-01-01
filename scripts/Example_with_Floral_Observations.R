@@ -78,7 +78,7 @@ observations_early <- tet[['Early']]
 observations_mid <- tet[['Mid']]
 observations_late <- tet[['Late']]
 
-graphDrawer(observations_early, lbl_fnt = 14,
+graphDrawer(observations_late, lbl_fnt = 14,
             edge_clr = 'lightseagreen',
             node_clrs  = c("#CEAB07", "deeppink2"),
             legend_items = c("Bombus", "Plant"),

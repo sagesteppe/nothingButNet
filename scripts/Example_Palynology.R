@@ -7,7 +7,8 @@ p2d <- 'data'
 files <- list.files(p2d, recursive = T)
 
 arranged_bees <- unlist(strsplit(readLines(
-  file.path(p2d,  files[grep('bees', files)])), split = ','))
+  file.path(p2d,  files[grep('bees', files)])), split = ',')) %>% 
+  str_trim(.)
 
 lkp <- data.frame(doy = 146:208, week = rep(3:11, each = 7)) %>% 
   mutate(date = as.Date(doy, origin = "2015-01-01"))
@@ -26,21 +27,14 @@ morpho <- read.csv(file.path(p2d, files[grep('morpho', files)])) %>%
   group_by(species, period, morphotype) %>% 
   summarize(Grains = sum(sum)) %>% 
   filter(! morphotype  %in% c('CONIFER', 'INDISTINGUISHABLE_CLUMP', 'NER', 
-                              "CAN'T_DISTINGUISH", 'DEHYDRATED'), 
+                              "CAN'T_DISTINGUISH", 'DEHYDRATED'),
+         species != 'kirbiellus',
          Grains > 1) %>% 
   mutate(Percent = (Grains/sum(Grains)) * 100)  %>% 
   select(-Grains)
 
 rm(lkp)
 
-
-a <- c('Trifolium', 'Lupinus', 'Glyccrrhiza', 'Mitella', 'Geum')
-b <- c('Lupinus', 'Lathyrus', 'Potentilla', 'Androsace', 'Bistorta', 'Vicia')
-c <- c('Jeffersonia', 'Micranthes', 'Prunus', 'Delphinium', 'Androsace', 
-       'Penstemon', 'Orthocarpus', 'Scuttelaria', 'Aquilegia', 'Castilleja', 'Draba')
-d <- c('Salix', 'Boechera')
-
-arranged_bees
 arranged_plants <- unique(morpho$morphotype)
 arranged_plants <- sort(arranged_plants)
 
@@ -62,10 +56,13 @@ palyn_early <- tet[['Early']]
 palyn_mid <- tet[['Mid']]
 palyn_late <- tet[['Late']]
 
-graphDrawer(palyn_early, lbl_fnt = 14,
+graphDrawer(palyn_mid, lbl_fnt = 14,
             edge_clr = 'lightseagreen',
             node_clrs  = c("#CEAB07", "deeppink2"),
             legend_items = c("Bombus", "Plant"),
             ntwrks_page = 12,
             col = 3
 )
+
+
+blanker(palyn_mid)
