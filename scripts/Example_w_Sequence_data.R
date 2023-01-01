@@ -2,7 +2,7 @@ library(tidyverse)
 
 setwd('~/Documents/nothingButNet')
 p2d <- file.path('data/raw')
-files <- list.files(p2d, pattern = 'csv')
+files <- list.files(p2d)
 
 source('scripts/functions.R')
 
@@ -25,6 +25,9 @@ arranged_plants <- read.csv(file.path(p2d, files[grep('species', files)])) %>%
   pull(abbreviation)
 plants_legend <- read.csv(file.path(p2d, files[grep('species', files)])) 
 
+arranged_bees <- unlist(strsplit(readLines(
+  file.path(p2d, files[grep('bees', files)])), split = ',')) 
+
 seqs <- rbind(blast, bracken, kraken) %>% 
   mutate(sample.id = as.numeric(sample.id)) 
 
@@ -34,7 +37,7 @@ corbiculae <- read.csv(file.path(p2d, files[grep('Corbiculae', files)])) %>%
 seqs <- left_join(seqs, corbiculae, by = 'sample.id')
 
 p2d <- ('~/Documents/floral_observations/data')
-files <- list.files(p2d, pattern = 'csv') 
+files <- list.files(p2d) 
 
 weeks <- read.csv(
   paste0(p2d, '/', files[grep('queen_observations', files)]) )  %>% 
@@ -53,11 +56,6 @@ seqs <- left_join(seqs, weeks, by = 'date') %>%
   select(Taxon, period, n, bombus.species, date, Method)
 
 rm(blast, bracken, kraken, files, p2d, corbiculae, weeks)
-
-arranged_bees <- c('bifarius', 'mixtus', 'rufocinctus', 'sylvicola',
-                   'flavifrons',
-                   'appositus', 'californicus', 'nevadensis', 
-                   'unknown') 
 
 bee_obs_wk <- seqs %>% 
   group_by(bombus.species, Taxon, period, Method) %>% 

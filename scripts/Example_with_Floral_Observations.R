@@ -35,14 +35,12 @@ bee_obs <- read.csv(
   ))
 
 
-f <- list.files(file.path(p2d, 'raw'), 'csv')
-arranged_plants <- read.csv(file.path(p2d, 'raw', f[grep('species', f)])) %>% 
+f <- list.files(file.path(p2d, 'raw'))
+arranged_plants <- read.csv(file.path(p2d, 'raw', f[grep('species', f)])) %>%
   pull(abbreviation)
 
-arranged_bees <- c('bifarius', 'mixtus', 'rufocinctus', 'sylvicola',
-                   'flavifrons',
-                   'appositus', 'californicus', 'nevadensis', 
-                   'unknown') 
+arranged_bees <- unlist(strsplit(readLines(
+  file.path(p2d, 'raw', f[grep('bees', f)])), split = ','))
 
 rm(p2d, files, f, observation_times)
 
@@ -78,7 +76,7 @@ observations_early <- tet[['Early']]
 observations_mid <- tet[['Mid']]
 observations_late <- tet[['Late']]
 
-graphDrawer(early, lbl_fnt = 14,
+graphDrawer(observations_late, lbl_fnt = 14,
             edge_clr = 'lightseagreen',
             node_clrs  = c("#CEAB07", "deeppink2"),
             legend_items = c("Bombus", "Plant"),
@@ -86,5 +84,5 @@ graphDrawer(early, lbl_fnt = 14,
             col = 3
 )
 
-rm(observations_early, observations_mid, observations_mid)
+rm(observations_early, observations_mid, observations_late, tet)
 
