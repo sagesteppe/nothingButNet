@@ -74,17 +74,24 @@ tet <- lapply(resin, arrange_nets, col_arrange = arranged_plants,
               row_arrange = arranged_bees)
 rm(bee_obs_wk, resin, bee_obs)
 
-observations_early <- tet[['Early']]
-observations_mid <- tet[['Mid']]
-observations_late <- tet[['Late']]
+Observations.Early <- tet[['Early']]
+Observations.Mid <- tet[['Mid']]
+Observations.Late <- tet[['Late']]
 
-graphDrawer(observations_late, lbl_fnt = 14,
+graphDrawer(Observations.Late, lbl_fnt = 14,
             edge_clr = 'lightseagreen',
             node_clrs  = c("#CEAB07", "deeppink2"),
             legend_items = c("Bombus", "Plant"),
-            ntwrks_page = 12,
-            col = 3
+            directory = 'NetworkGraphs/Intermediates-Paper',
+            ntwrks_page = 6,
+            col = 2
 )
 
 rm(observations_early, observations_mid, observations_late, tet)
+
+
+nets2Page(col_var = c('Molecular', 'Observations'), fname = 'Mosaiced_MolObs_net', 
+          directory = 'NetworkGraphs/Intermediates-Paper',
+          mainT = 'Comparision of Foraging Patterns from Molecular and Observations',
+          row_var = c('Early', 'Mid', 'Late'), sep = '.')
 

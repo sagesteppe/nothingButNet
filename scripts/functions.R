@@ -141,10 +141,12 @@ vertex_names <- function(x){
 #' graphs. It does not modify the label values, just positions and orientation. 
 #' 
 #' @param x = a matrix output from vertex_names
+#' @col = the number of columns of graphs
 #' @seealso 'vertex_names', 'graphDrawer'
 #' @export
-vert_lab_position <- function(x){
+vert_lab_position <- function(x, col){
   
+  m_dist <- if(col == 3){m_dist = 4.5} else if(col < 3){m_dist = 3} 
   
   nodes <- nrow(x) + ncol(x)
   degrees <- 360/nodes
@@ -162,21 +164,21 @@ vert_lab_position <- function(x){
   )
   
   dist_vals <- c(
-    rep(4.5, length(which((positions < 65) == TRUE))),
+    rep(m_dist, length(which((positions < 65) == TRUE))),
     seq(from = 2, to = 7, length.out = 
           length(which((positions > 65 & positions < 90) == TRUE))),
     
     seq(from = 7, to = 2, length.out = 
           length(which((positions > 90 & positions < 125) == TRUE))),
     
-    rep(4.5, length(which((positions > 125 & positions < 245) == TRUE))),
+    rep(m_dist, length(which((positions > 125 & positions < 245) == TRUE))),
     
     seq(from = 2, to = 7, length.out = 
           length(which((positions > 245 & positions < 270) == TRUE))),
     seq(from = 7, to = 2, length.out = 
           length(which((positions > 270 & positions < 295) == TRUE))),
     
-    rep(4.5, length(which((positions > 295) == TRUE)))
+    rep(m_dist, length(which((positions > 295) == TRUE)))
     
   )
   
@@ -282,7 +284,9 @@ graphDrawer <- function(data, edge_clr, node_clrs,  bg_clr,
   
   if(missing(lbl_fnt)) { lbl_fnt <- 14 }
   if(missing(directory)) { directory <- 'NetworkGraphs/Intermediates' }
-  if(missing(fname)) { fname <- paste0(substitute(data), '.png')}
+  if(missing(fname)) { 
+    fname <- paste0(substitute(data), '.png')} else{
+      fname <- paste0(fname, '.png')}
   if(missing(ntwrks_page)) { ntwrks_page <- 1 } | if(missing(col)) { col <- 1 }
   if(missing(H)) { H <- NA}  |  if(missing(W)) { W <- NA}
   if(missing(edge_clr)) {edge_clr <- 'black'}
@@ -298,15 +302,13 @@ graphDrawer <- function(data, edge_clr, node_clrs,  bg_clr,
     dims <- graph_dims(ntwrks_page, col)
   }
   
-  
-  filename <- file.path(directory, fname)
-  
+  filename <- file.path(directory, paste0(fname))
   ifelse(!dir.exists(file.path(directory)),
          dir.create(file.path(directory)), FALSE)
   
   blanked_data <- blanker(data)
   VNames <- vertex_names(blanked_data)
-  VLPs <- vert_lab_position(blanked_data)
+  VLPs <- vert_lab_position(blanked_data, col)
   
   net = igraph::graph_from_incidence_matrix(blanked_data, weight=T)
   deg = igraph::centr_degree(net, mode="all")
@@ -315,14 +317,14 @@ graphDrawer <- function(data, edge_clr, node_clrs,  bg_clr,
   
   V(net)$label.color <- 'black'
   V(net)$size = 2.5*sqrt(deg$res)
-  E(net)$width = E(net)$weight/4
+  E(net)$width = E(net)$weight/2
   
   template <- layout_in_circle(net)
   
   png(filename,
       width = dims$W, height = dims$H, units = "px", pointsize = 12)
   
-  par(mar=c(3,6.5,3,6.5))
+  par(mar=c(3.5,6.5,3.5,6.5))
   plot(net, layout=template, 
        edge.color = edge_clr,
        vertex.label.cex = 1.25,
@@ -334,10 +336,9 @@ graphDrawer <- function(data, edge_clr, node_clrs,  bg_clr,
     
  invisible(dev.off())
  
- message(paste0("'", fname, 
+ message(paste0("'", deparse(substitute(data)), 
                 "' has been rendered as a graph and saved to:\n ", filename))
  
-
 }
 
 
@@ -496,11 +497,11 @@ tableLegend <- function(x, table_title, table_items, directory, fname, legend_it
 #' 
 nets2Page <- function(directory, col_var, row_var, fname, sep_char, mainT, Tlegend_fname){
   
-  if(missing(directory)) {directory <- 'NetworkGraphs'}
-  dirIN <- file.path(directory, 'Intermediates'); dirOUT <- file.path(directory, 'Output')
+  if(missing(directory)) {directory <- 'NetworkGraphs/Intermediates'}
+  dirIN <- file.path(directory); dirOUT <- file.path(directory, 'Output')
   if(missing(fname)) {fname <- 'mosaiced_Nets.pdf'}
   if(missing(sep_char))  {sep_char <- ''}
-  if(missing(mainT))  {mainT <- 'Bill walton thinks u forgot a title'}
+  if(missing(mainT))  {mainT <- ''}
   if(missing(Tlegend_fname)) {Tlegend_fname <- 'TableLegend.png'}
   
   rowOrder <- matrix( # this sets up a matrix to have rows groups in order
@@ -523,9 +524,8 @@ nets2Page <- function(directory, col_var, row_var, fname, sep_char, mainT, Tlege
   # define the layout
   layout <- matrix(nrow = rowN, ncol = colN, byrow = T,
                    data = c(rep(1:(rowN -1), each = colN),
-                            rowN:((rowN-1) + colN) )
-  )
-  layout <- rbind(layout, rep((max(layout) + 1), nrow(layout)))
+                            rowN:((rowN-1) + colN) ) )
+  layout <- rbind(layout, rep((max(layout) + 1), ncol(layout)))
   
   # Recover the top grobs!!
   top_grobs <- split(grob_images[1:(length(grob_images) - rowN)],
@@ -537,13 +537,21 @@ nets2Page <- function(directory, col_var, row_var, fname, sep_char, mainT, Tlege
   t1 <- gridExtra::arrangeGrob(grobs = top_grobs$t1, ncol = colN, 
                                padding = unit(0.0, "line"),
                                left = row_var[1], top = grid::textGrob(mainT, vjust = -1.1))
-  
+
   # this will get all of the subsequent top grobs !!!!!!!!
+  
+  if(length(top_grobs) >= 3){
   top_grobs <- mapply(gridExtra::arrangeGrob, 
                       grobs = top_grobs[2:length(top_grobs)], ncol = colN, 
-                      left = row_var[2:(length(row_var)-1)], 
+                      left = row_var[2:(length(row_var)-1)],  
                       padding = unit(0.0, "line"))
-  
+  } else { 
+    top_grobs <- gridExtra::arrangeGrob(
+                        grobs = top_grobs[2], ncol = colN, 
+                        left = row_var[2:(length(row_var)-1)],  
+                        padding = unit(0.0, "line") )
+    }
+    
   list2env(top_grobs, env = environment())
   
   # this recovers the bottom grobs
@@ -555,14 +563,17 @@ nets2Page <- function(directory, col_var, row_var, fname, sep_char, mainT, Tlege
   
   b1 <- gridExtra::arrangeGrob(grobs = bottom_grobs$b1, bottom = col_var[1],
                                left = row_var[length(row_var)],
-                               padding = unit(0.0, "line"))
+                               padding = unit(0.0, "line")
+                         )
+  
   bottoms <- mapply(gridExtra::arrangeGrob, 
                     grobs = bottom_grobs[2:length(bottom_grobs)],
                     bottom = col_var[2:(length(col_var))],
-                    padding = unit(0.0, "line"))
+                    padding = unit(0.0, "line")
+               )
   
   list2env(bottoms, env = environment())
-  
+
   # ensure the grobs are in the correct order for the mosaic. 
   g2p <- mget(ls(pattern = '[t|b][1-9]{1}'))
   groborder <- c(paste0('t', seq(1:9)), paste0('b', seq(1:9)))

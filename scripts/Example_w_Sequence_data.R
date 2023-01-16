@@ -1,5 +1,5 @@
 library(tidyverse)
-
+library(igraph)
 setwd('~/Documents/nothingButNet')
 p2d <- file.path('data/raw')
 files <- list.files(p2d)
@@ -96,6 +96,20 @@ graphDrawer(Kraken.Late,
             ntwrks_page = 9,
             col = 3
 )
+
+
+graphDrawer(BLAST.Late,
+            fname = 'Molecular.Late',
+            edge_clr = 'lightseagreen',
+            node_clrs  = c("#CEAB07", "deeppink2"),
+            legend_items = c("Bombus", "Plant"),
+            directory = 'NetworkGraphs/Intermediates-Paper',
+            ntwrks_page = 6,
+            col = 2
+)
+
+
+
 
 rm(BLAST.Early, BLAST.Late, BLAST.Mid, Bracken.Early, Bracken.Late, Bracken.Mid,
    Kraken.Early, Kraken.Late, Kraken.Mid)
