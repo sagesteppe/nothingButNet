@@ -1,5 +1,5 @@
 library(tidyverse)
-
+library(igraph)
 setwd('~/Documents/nothingButNet')
 source('scripts/functions.R')
 
@@ -87,11 +87,27 @@ graphDrawer(Observations.Late, lbl_fnt = 14,
             col = 2
 )
 
-rm(observations_early, observations_mid, observations_late, tet)
+rm(Observations.Early, Observations.Mid, Observations.Late, tet)
 
 
-nets2Page(col_var = c('Molecular', 'Observations'), fname = 'Mosaiced_MolObs_net', 
+b <- nets2Page(col_var = c('Molecular', 'Observations'), fname = 'Mosaiced_MolObs_net', 
           directory = 'NetworkGraphs/Intermediates-Paper',
           mainT = 'Comparision of Foraging Patterns from Molecular and Observations',
           row_var = c('Early', 'Mid', 'Late'), sep = '.')
 
+grob_images <- b
+
+top_grobs <- split(grob_images[1:(length(grob_images) - rowN)],
+                   ceiling(seq_along(grob_images[1:(length(grob_images) -
+                                                      rowN)]) / rowN))
+
+names(top_grobs) <- paste0('t', seq(1:length(top_grobs)))
+
+
+top_grobs <- gridExtra::arrangeGrob(
+  grobs = top_grobs[2] , ncol = colN, 
+  left = row_var[2],  
+  padding = unit(0.0, "line") )
+
+
+plot(top_grobs)
