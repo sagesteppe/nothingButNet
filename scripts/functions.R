@@ -14,16 +14,16 @@ arrange_nets <- function(x, col_arrange, row_arrange){
   
   if(missing(row_arrange)) { row_arrange <- rownames(x) }
   
-  x <- x[rowSums(x) > 0, colSums(x) > 0]
+  x <- x[rowSums(x) > 0, colSums(x) > 0, drop = F]
   colnames(x) <- sub(" ", "", colnames(x))
   col_arrange <- sub(" ", "", col_arrange)
   row_arrange <- sub(" ", "", row_arrange)
   
   col2grab <- match(col_arrange, colnames(x)) |> na.omit()
-  x <- x[, col2grab]
+  x <- x[, col2grab, drop = F]
   
   row2grab <- match(row_arrange, rownames(x)) |> na.omit()
-  x <- x[row2grab, ]
+  x <- x[row2grab, , drop = F]
   
   return(x)
   
@@ -94,7 +94,7 @@ blanker <- function(x){
     pA <- rbind(
       x[1:floor((netL / 4)),],
       matrix(data = 0, nrow = colN, ncol = ncol(x)),
-      x[ceiling((netL / 4)):nrow(x),,drop=FALSE] )
+      x[ceiling((netL / 4)):nrow(x), , drop=FALSE] )
     
     r <- (netL / 2)  + (netL / 4) -  nrow(x)
     
@@ -523,11 +523,11 @@ nets2Page <- function(directory, col_var, row_var, fname, sep_char, mainT, Tlege
   rowN <- nPlots / length(col_var)
   
   # define the layout
-  layout <- matrix(nrow = rowN, ncol = colN, byrow = T,
+  mlayout <- matrix(nrow = rowN, ncol = colN, byrow = T,
                    data = c(rep(1:(rowN -1), each = colN),
                             rowN:((rowN-1) + colN) ) )
-  layout <- rbind(layout, rep((max(layout) + 1), ncol(layout)))
-  
+  mlayout <- rbind(mlayout, rep((max(mlayout) + 1), ncol(mlayout)))  
+
   # Recover the top grobs!!
   top_grobs <- split(grob_images[1:(length(grob_images) - rowN)],
                      ceiling(seq_along(grob_images[1:(length(grob_images) -
@@ -541,67 +541,77 @@ nets2Page <- function(directory, col_var, row_var, fname, sep_char, mainT, Tlege
 
   # this will get all of the subsequent top grobs !!!!!!!!
   
-#  if(length(top_grobs) >= 3){
-#  top_grobs <- mapply(gridExtra::arrangeGrob, 
-#                      grobs = top_grobs[(colN+1):length(top_grobs)], ncol = colN, 
-#                      left = row_var[(colN+1):(length(row_var)-1)],  
-#                      padding = unit(0.0, "line"))
-#  } else { 
-#    top_grobs <- gridExtra::arrangeGrob(
-#                        grobs = top_grobs[2], ncol = colN, 
-#                        left = row_var[2],  
-#                        padding = unit(0.0, "line") )
-#    }
+  if(length(top_grobs) >= 3){
+  top_grobs <- mapply(gridExtra::arrangeGrob, 
+                      grobs = top_grobs[(colN+1):length(top_grobs)], ncol = colN, 
+                      left = row_var[(colN+1):(length(row_var)-1)],  
+                      padding = unit(0.0, "line"))
+  } else { 
+    top_grobs <- gridExtra::arrangeGrob(
+                        grobs = top_grobs[2], ncol = colN, 
+                        left = row_var[2],  
+                        padding = unit(0.0, "line") )
+    }
     
-#  list2env(top_grobs, env = environment())
+  list2env(top_grobs, env = environment())
   
   # this recovers the bottom grobs
-#  L <- length(grob_images)
-#  range <- ((L - rowN) + 1 ):L
-#  bottom_grobs <- split(grob_images[((L - rowN) + 1 ): L],
-#                        seq_along(range) / 1)
-#  names(bottom_grobs) <- paste0('b', seq(1:length(bottom_grobs)))
+  L <- length(grob_images)
+  range <- ((L - rowN) + 1 ):L
+  bottom_grobs <- split(grob_images[((L - rowN) + 1 ): L],
+                        seq_along(range) / 1)
+  names(bottom_grobs) <- paste0('b', seq(1:length(bottom_grobs)))
   
-#  b1 <- gridExtra::arrangeGrob(grobs = bottom_grobs$b1, bottom = col_var[1],
-#                               left = row_var[length(row_var)],
-#                               padding = unit(0.0, "line")
-#                         )
+  if(colN > 2){
+  b1 <- gridExtra::arrangeGrob(grobs = bottom_grobs$b1, bottom = col_var[1],
+                               left = row_var[length(row_var)],
+                               padding = unit(0.0, "line")
+                         )
   
-#  bottoms <- mapply(gridExtra::arrangeGrob, 
-#                    grobs = bottom_grobs[2:length(bottom_grobs)],
-#                    bottom = col_var[2:(length(col_var))],
-#                    padding = unit(0.0, "line")
-#               )
+  bottoms <- mapply(gridExtra::arrangeGrob, 
+                    grobs = bottom_grobs[2:length(bottom_grobs)],
+                    bottom = col_var[1:(length(col_var))],
+                    padding = unit(0.0, "line")
+  )
+  } else {
+    b1 <- gridExtra::arrangeGrob(grobs = bottom_grobs$b1, bottom = col_var[1],
+                                 left = row_var[length(row_var)],
+                                 padding = unit(0.0, "line") )
+    
+    bottoms <- mapply(gridExtra::arrangeGrob, 
+                    grobs = bottom_grobs[2],
+                    bottom = col_var[2],
+                    padding = unit(0.0, "line") )
+  }
   
-#  list2env(bottoms, env = environment())
+  list2env(bottoms, env = environment())
 
   # ensure the grobs are in the correct order for the mosaic. 
-#  g2p <- mget(ls(pattern = '[t|b][1-9]{1}'))
-#  groborder <- c(paste0('t', seq(1:9)), paste0('b', seq(1:9)))
-#  ord2grab <- match(groborder, names(g2p)) |> na.omit()
-#  g2p <- g2p[ord2grab]
+  g2p <- mget(ls(pattern = '[t|b][1-9]{1}'))
+  groborder <- c(paste0('t', seq(1:9)), paste0('b', seq(1:9)))
+  ord2grab <- match(groborder, names(g2p)) |> na.omit()
+  g2p <- g2p[ord2grab]
   
   # load and place the legend onto the grobs2plot
-#  legend <- grid::rasterGrob(png::readPNG(file.path(dirIN, Tlegend_fname)))
-#  legend <- gridExtra::arrangeGrob(legend, nrow = 1)
-#  g2p <- c(g2p, leg = list(legend)) 
+  legend <- grid::rasterGrob(png::readPNG(file.path(dirIN, Tlegend_fname)))
+  legend <- gridExtra::arrangeGrob(legend, nrow = 1)
+  g2p <- c(g2p, leg = list(legend)) 
   
   # place on the page and print.
   
-#  ifelse(!dir.exists(file.path(dirOUT)),
-#         dir.create(file.path(dirOUT)), FALSE)
+  ifelse(!dir.exists(file.path(dirOUT)),
+         dir.create(file.path(dirOUT)), FALSE)
  
-  #return(nPlots)
-#  ml <- gridExtra::marrangeGrob(grobs = g2p, 
-#                                layout_matrix = layout, top = "")
-#  pdf(file = file.path(dirOUT, fname), paper = 'a4')
-#  print(ml)
-#  invisible(dev.off())
-  
-  return(rowN)
-#  message(paste0("'", fname, 
-#                 "' has been rendered as a pdf and saved to:\n ",
-#                 file.path(dirOUT, fname)))
+  return(groborder)
+  ml <- gridExtra::marrangeGrob(grobs = g2p, 
+                                layout_matrix = mlayout, top = "")
+  pdf(file = file.path(dirOUT, fname), paper = 'a4')
+  print(ml)
+  invisible(dev.off())
+
+  message(paste0("'", fname, 
+                 "' has been rendered as a pdf and saved to:\n ",
+                 file.path(dirOUT, fname)))
   
 }
 
