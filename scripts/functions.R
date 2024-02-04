@@ -49,7 +49,7 @@ blanker <- function(x){
   if(colN < 3){colN <- 3}
   thirdStart <- round( round(netL * 3/4) - (colN*3/4) ) 
   
-  if( # net work with equal number of members in each bipartite group
+  if( # network with equal number of members in each bipartite group
     nrow(x) == ncol(x)) {
     
     A = x[1:round(QnetL),] 
@@ -75,11 +75,9 @@ blanker <- function(x){
       RSUpper <- ceiling(Rside/2) - ceiling(Rside/2) %% 2
       RSLower <- Rside - RSUpper 
       
-      
     }  else { # variables for even numbers of members in a network
       
       Lside <- sides; RSUpper <- ceiling(sides/2);  RSLower <- floor(sides/2)
-      
     }
     
     p <- data.frame( # make all plots for networks with many more of one bipartite member than the other
@@ -93,7 +91,7 @@ blanker <- function(x){
     
     pA <- rbind(
       x[1:floor((netL / 4)),],
-      matrix(data = 0, nrow = colN, ncol = ncol(x)),
+      setNames(data.frame(matrix(data = 0, nrow = colN, ncol = ncol(x))), colnames(x)),
       x[ceiling((netL / 4)):nrow(x), , drop=FALSE] )
     
     r <- (netL / 2)  + (netL / 4) -  nrow(x)
@@ -130,6 +128,7 @@ vertex_names <- function(x){
   vertice_names <- sub('^X[0-9]$', '', vertice_names)
   vertice_names <- sub('^X.[0-9]$', '', vertice_names)
   vertice_names <- sub('^X[0-9].[0-9]$', '', vertice_names)
+  vertice_names <- sub('^[0-9]', '', vertice_names)
   
   vertice_names <- gsub("\\.(?=[A-Za-z])", ". ", vertice_names, perl = TRUE)
 }
@@ -317,7 +316,7 @@ graphDrawer <- function(data, edge_clr, node_clrs,  bg_clr,
   
   V(net)$label.color <- 'black'
   V(net)$size = 2.5*sqrt(deg$res)
-  E(net)$width = E(net)$weight/2
+  E(net)$width = E(net)$weight/3
   
   template <- layout_in_circle(net)
   

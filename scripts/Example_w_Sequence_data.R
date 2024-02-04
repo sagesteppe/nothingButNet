@@ -7,8 +7,6 @@ files <- list.files(p2d)
 source('scripts/functions.R')
 
 
-# BLAST IS MISSING SAMPLES!!!!!!!!!!!! LIKE 3- 12 ????!??!?!?!??!?!?!?!?
-
 blast <- read.csv(file.path(p2d, files[grep('blast', files)])) %>% 
   select(sample.id, Taxon  = name, n = Seqs_pr_taxon) %>% 
   mutate('Method' = 'BLAST') %>% 

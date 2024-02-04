@@ -6,7 +6,6 @@ files <- list.files(p2d)
 
 source('scripts/functions.R')
 
-
 blast <- read.csv(file.path(p2d, files[grep('tally_blast', files)])) %>% 
   group_by(Sample) %>% 
   slice_max(Prcnt_seqs, n = 10) %>% 
@@ -45,7 +44,7 @@ corbiculae <- read.csv(file.path(p2d, files[grep('Corbiculae_Samples', files)]))
 
 seqs <- left_join(seqs, corbiculae, by = c('Sample' = 'sample.id'))
 
-p2d <- ('~/Documents/floral_observations/data')
+p2d <- ('~/Documents/assoRted/floral_observations/data')
 files <- list.files(p2d) 
 
 weeks <- read.csv(
@@ -100,10 +99,41 @@ resin <- bee_obs_wk %>%  # if sp. we need to leave genus spelled out, if epithet
       row_arrange = arranged_bees) # to remove empty plants
 
 list2env(resin,env = environment())
-rm(arranged_bees, arranged_plants)
 
 
-graphDrawer(Expert.Late, lbl_fnt = 14,
+exp <- bee_obs_wk %>% 
+  filter(Method == 'Expert') %>% 
+  ungroup() %>% 
+  group_by(bombus.species, Taxon) %>% 
+  mutate(
+         Taxon = str_replace(Taxon, " ", "."),
+         Taxon = paste0(substr(Taxon, 1,1), '.',
+                                       gsub("^.*\\.", "", Taxon ))) %>%
+  mutate(Taxon = case_when(
+    Taxon == 'M.cilita' ~ 'M.ciliata',
+    Taxon == 'L.lanszwertii' ~ 'L.leucanthus',
+    Taxon == 'E.Ericaceae' ~ 'Ericaceae.sp.',
+    Taxon == 'S.Salix' ~ 'Salix.sp.',
+    Taxon == 'E.Epilobium' ~ 'Epilobium.sp.',
+    Taxon == 'F.speciosus' ~ 'F.speciosa',
+    TRUE ~ Taxon
+  )) %>% 
+  mutate(
+    Interactions_total = sum(Interactions_total),
+  ) %>% 
+  ungroup(Taxon) %>% 
+  mutate(
+    Interactions_total = ( Interactions_total / sum(Interactions_total)) * 100) %>% 
+  select(-period, -Method) %>% 
+  distinct() %>% 
+  pivot_wider(names_from = Taxon, values_from = Interactions_total) %>% 
+  column_to_rownames(., var = 'bombus.species') %>% 
+  mutate(across(.cols = everything(), ~replace_na(.x, 0)) )  
+
+
+out <- arrange_nets(exp, col_arrange = arranged_plants, row_arrange = arranged_bees)
+
+graphDrawer(out, lbl_fnt = 14,
             edge_clr = 'lightseagreen',
             node_clrs  = c("#CEAB07", "deeppink2"),
             legend_items = c("Bombus", "Plant"),
